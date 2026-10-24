@@ -261,7 +261,7 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
 
   const esMultiplePlus = pasoActivoManual.tipo === "multiple_plus" || Boolean(pasoActivoManual.multiplePlus?.capas && pasoActivoManual.multiplePlus.capas.length > 0);
   const modoHeredados = pasoActivoManual.multiplePlus?.modoVisualizacionHeredados || "solido";
-  const modoInactivos = pasoActivoManual.multiplePlus?.modoVisualizacionInactivos || "oculto";
+  const modoInactivos = pasoActivoManual.multiplePlus?.modoVisualizacionInactivos || "cristal";
 
   const pickingTemporal = (modoPickingManual.activo && !modoPickingManual.grupoId && modoPickingManual.pasoId === pasoActivoManual.id)
     ? modoPickingManual.piezasTemporalmenteSeleccionadas
@@ -321,14 +321,15 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
         esInactivoCristal = true;
       }
       // Si modoHeredados === "solido", permanece visible y sólida PBR (esInactivoCristal = false)
-    } else if (!esPickingCapa) {
-      if (esPiezaDeBloqueFuncional) {
-        // 🛡️ Las piezas de Bloques Funcionales NO pertenecen a la capa virtual de inactivos
-        // Permanecen ocultas durante el ensamble del casco si su bloque no está activo
+    } else {
+      // 🛡️ PIEZA INACTIVA (Fuera de las capas activas y heredadas de este paso)
+      if (esPiezaDeBloqueFuncional && estaOcultaPorGrupoCinematico && !esPickingCapa) {
+        // 🛡️ Bloque funcional explícitamente apagado con el ojito
         estaOcultaPorReglasPaso = true;
       } else {
-        // Inactiva (futura no ensamblada): controlada por modoInactivos (por defecto "oculto")
-        if (modoInactivos === "oculto") {
+        // Controlada por modoInactivos ("oculto" | "cristal" | "global")
+        const debeOcultarInactivo = modoInactivos === "oculto" || (Boolean(pasoActivoManual.ocultarNoAsignadas) && modoInactivos !== "cristal" && modoInactivos !== "global");
+        if (debeOcultarInactivo) {
           estaOcultaPorReglasPaso = true;
         } else if (modoInactivos === "cristal") {
           esInactivoCristal = true;

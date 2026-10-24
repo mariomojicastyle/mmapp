@@ -6,21 +6,17 @@ import {
   Crown,
   Trash2,
   Snowflake,
-  Search,
   Plus,
   Box,
   Eye,
   EyeOff,
   GripVertical,
-  GripHorizontal,
-  Maximize2,
-  Minimize2,
   ChevronDown,
   ChevronRight,
-  LocateFixed,
-  Check,
   Move,
   Link2,
+  LocateFixed,
+  Check,
 } from "lucide-react";
 import { CapaMultiplePlus, PasoManualStudio, TableroCapaPlus, HerrajeCapaPlus, OffsetBancoCm } from "@/lib/storeTypes";
 import { use3BFStore } from "@/lib/store";
@@ -116,7 +112,6 @@ export function CapaMultiplePlusCard({
     return grupos.find((g: any) => nombreLow.includes(g.nombre.toLowerCase()));
   }, [capa.bloqueFuncionalId, capa.nombre, pasoP00]);
 
-  const [busquedaHerrajes, setBusquedaHerrajes] = useState("");
   const [nombreSeleccionado, setNombreSeleccionado] = useState(false);
   const [posicionadoOk, setPosicionadoOk] = useState(false);
 
@@ -278,12 +273,7 @@ export function CapaMultiplePlusCard({
     return pasosManual.slice(0, idxActual);
   }, [pasosManual, paso.id]);
 
-  // Filtrado de herrajes activos
-  const herrajesFiltrados = useMemo(() => {
-    if (!busquedaHerrajes.trim()) return capa.herrajes;
-    const q = busquedaHerrajes.toLowerCase();
-    return capa.herrajes.filter((h) => h.id.toLowerCase().includes(q));
-  }, [capa.herrajes, busquedaHerrajes]);
+  const herrajesFiltrados = capa.herrajes;
 
   return (
     <div
@@ -505,8 +495,8 @@ export function CapaMultiplePlusCard({
             }
             className={`w-7 h-7 rounded-full flex items-center justify-center transition cursor-pointer shadow-xs ${
               paso.ocultarNoAsignadas
-                ? "bg-cyan-500 text-white shadow-xs"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950/40"
+                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-xs"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-[#0088AA] dark:hover:text-[#1368AA] hover:bg-cyan-50 dark:hover:bg-cyan-950/40"
             }`}
           >
             <IconInvertir className="w-3.5 h-3.5" />
@@ -535,38 +525,13 @@ export function CapaMultiplePlusCard({
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
             <Layers className="w-3 h-3 text-amber-500" />
-            Tableros de Madera ({capa.tableros.length}):
+            Tableros ({capa.tableros.length}):
           </span>
-          <div className="flex items-center gap-1.5">
-            {capa.tableros.length === 0 && (
-              <span className="text-[9px] text-slate-400 italic">
-                Activa el bombillo y toca tableros en el visor 3D para añadirlos
-              </span>
-            )}
-            {/* 🔲 Botón Expandir / Maximizar lista de tableros */}
-            {capa.tableros.length > 2 && (
-              <button
-                type="button"
-                onClick={handleToggleExpandirTableros}
-                title={
-                  esTablerosExpandido
-                    ? "Compactar a la altura ajustada"
-                    : "Expandir para ver todos los tableros sin límite de altura"
-                }
-                className={`w-6 h-6 rounded-full flex items-center justify-center transition cursor-pointer shadow-2xs ${
-                  esTablerosExpandido
-                    ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-cyan-600/30 ring-1 ring-cyan-400/50"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700"
-                }`}
-              >
-                {esTablerosExpandido ? (
-                  <Minimize2 className="w-3 h-3" />
-                ) : (
-                  <Maximize2 className="w-3 h-3" />
-                )}
-              </button>
-            )}
-          </div>
+          {capa.tableros.length === 0 && (
+            <span className="text-[9px] text-slate-400 italic">
+              Activa el bombillo y toca tableros en el visor 3D para añadirlos
+            </span>
+          )}
         </div>
 
         {/* 📦 Contenedor dinámico de tableros con altura ajustable */}
@@ -599,36 +564,33 @@ export function CapaMultiplePlusCard({
           ))}
         </div>
 
-        {/* ↕️ Tirador inferior interactivo (Resize Handle) para estirar la sección de tableros arrastrando */}
+        {/* ↕️ Tirador inferior minimalista para estirar tableros (sin texto, doble clic expande/compacta) */}
         {capa.tableros.length > 2 && (
           <div
             onPointerDown={handleStartResizeTableros}
             onPointerMove={handlePointerMoveTableros}
             onPointerUp={handlePointerUpTableros}
             onDoubleClick={handleToggleExpandirTableros}
-            title="Arrastra hacia abajo/arriba para cambiar la altura de los tableros. Doble clic para expandir/compactar todo."
-            className={`w-full py-0.5 -mt-0.5 flex items-center justify-center cursor-ns-resize group select-none transition-colors rounded-full ${
-              arrastrandoAlturaTableros ? "bg-amber-100/50 dark:bg-amber-950/40" : "hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
-            }`}
+            title="Arrastra para ajustar la altura de los tableros. Doble clic para expandir/compactar."
+            className="w-full py-1.5 flex items-center justify-center cursor-ns-resize select-none group"
           >
-            <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 group-hover:border-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shadow-2xs transition-all">
-              <GripHorizontal className="w-3.5 h-3.5" />
-              <span className="text-[7.5px] font-bold tracking-wider uppercase">
-                {esTablerosExpandido
-                  ? "Ver todo activo (Doble clic para compactar)"
-                  : `${alturaTablerosPx}px (Arrastra para estirar | Doble clic expande)`}
-              </span>
-            </div>
+            <div
+              className={`w-14 h-1 rounded-full transition-colors ${
+                arrastrandoAlturaTableros
+                  ? "bg-amber-500 dark:bg-amber-400"
+                  : "bg-slate-300 dark:bg-slate-600 group-hover:bg-amber-500 dark:group-hover:bg-amber-400"
+              }`}
+            />
           </div>
         )}
       </div>
 
-      {/* ── FILA 3: HERRAJES ASIGNADOS A LA CAPA (Con buscador, scroll y cápsulas de alto brillo) ── */}
+      {/* ── FILA 3: HERRAJES ASIGNADOS A LA CAPA ── */}
       <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 flex items-center gap-1">
-              🔩 Herrajes e Inserción ({capa.herrajes.length}):
+              🔩 Herrajes ({capa.herrajes.length}):
             </span>
 
             {/* 🎯 Botón Cápsula "Posicionar en pieza" (Terminación circular obligatoria) */}
@@ -653,46 +615,6 @@ export function CapaMultiplePlusCard({
                     <LocateFixed className="w-2.5 h-2.5 text-cyan-600 dark:text-cyan-400" />
                     <span>Posicionar en pieza</span>
                   </>
-                )}
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {/* Buscador / Filtro ergonómico */}
-            {capa.herrajes.length > 3 && (
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[9px] w-32 sm:w-36">
-                <Search className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Buscar herraje..."
-                  value={busquedaHerrajes}
-                  onChange={(e) => setBusquedaHerrajes(e.target.value)}
-                  className="bg-transparent text-slate-700 dark:text-slate-200 outline-none w-full text-[9px]"
-                />
-              </div>
-            )}
-
-            {/* 🔲 Botón Expandir / Maximizar lista completa de herrajes */}
-            {capa.herrajes.length > 4 && (
-              <button
-                type="button"
-                onClick={handleToggleExpandir}
-                title={
-                  esHerrajesExpandido
-                    ? "Compactar a la altura ajustada"
-                    : "Expandir para ver todos los herrajes sin límite de altura"
-                }
-                className={`w-6 h-6 rounded-full flex items-center justify-center transition cursor-pointer shadow-2xs ${
-                  esHerrajesExpandido
-                    ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-cyan-600/30 ring-1 ring-cyan-400/50"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 border border-slate-200 dark:border-slate-700"
-                }`}
-              >
-                {esHerrajesExpandido ? (
-                  <Minimize2 className="w-3 h-3" />
-                ) : (
-                  <Maximize2 className="w-3 h-3" />
                 )}
               </button>
             )}
@@ -729,26 +651,23 @@ export function CapaMultiplePlusCard({
           )}
         </div>
 
-        {/* ↕️ Tirador inferior interactivo (Resize Handle) para estirar la sección de herrajes arrastrando */}
+        {/* ↕️ Tirador inferior minimalista para estirar herrajes (sin texto, doble clic expande/compacta) */}
         {capa.herrajes.length > 4 && (
           <div
             onPointerDown={handleStartResize}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onDoubleClick={handleToggleExpandir}
-            title="Arrastra hacia abajo/arriba para cambiar la altura de la sección. Doble clic para expandir/compactar todo."
-            className={`w-full py-1 -mt-0.5 flex items-center justify-center cursor-ns-resize group select-none transition-colors rounded-full ${
-              arrastrandoAltura ? "bg-cyan-100/50 dark:bg-cyan-950/40" : "hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
-            }`}
+            title="Arrastra para ajustar la altura de los herrajes. Doble clic para expandir/compactar."
+            className="w-full py-1.5 flex items-center justify-center cursor-ns-resize select-none group"
           >
-            <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 group-hover:border-cyan-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 shadow-2xs transition-all">
-              <GripHorizontal className="w-3.5 h-3.5" />
-              <span className="text-[7.5px] font-bold tracking-wider uppercase">
-                {esHerrajesExpandido
-                  ? "Ver todo activo (Doble clic para compactar)"
-                  : `${alturaHerrajesPx}px (Arrastra para estirar | Doble clic expande)`}
-              </span>
-            </div>
+            <div
+              className={`w-14 h-1 rounded-full transition-colors ${
+                arrastrandoAltura
+                  ? "bg-[#0088AA] dark:bg-[#1368AA]"
+                  : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#0088AA] dark:group-hover:bg-[#1368AA]"
+              }`}
+            />
           </div>
         )}
       </div>

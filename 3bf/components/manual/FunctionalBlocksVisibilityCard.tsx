@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
 import { Eye, EyeOff, Zap } from "lucide-react";
 
@@ -15,13 +15,78 @@ export default function FunctionalBlocksVisibilityCard() {
 
   const pasoP00 = pasosManual.find((p) => p.id === "P00" || p.tipo === "showcase");
   const bloques = pasoP00?.showcase?.gruposCinematicos || [];
+
+  // Altura inicial persistida
+  const [alturaBloquesPx, setAlturaBloquesPx] = useState<number>(260);
+  const [arrastrando, setArrastrando] = useState<boolean>(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const dragStartYRef = useRef<number>(0);
+  const startHeightRef = useRef<number>(260);
+  const isDraggingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("3bf_bloques_funcionales_height");
+      if (stored) {
+        const val = Number(stored);
+        if (!isNaN(val) && val >= 90 && val <= 1200) {
+          setAlturaBloquesPx(val);
+          if (listRef.current) {
+            listRef.current.style.height = `${val}px`;
+            listRef.current.style.maxHeight = `${val}px`;
+          }
+        }
+      }
+    }
+  }, []);
+
+  // Control 60 FPS ultra-fluido por manipulación directa del DOM (cero re-renders durante el arrastre)
+  const handleStartResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    isDraggingRef.current = true;
+    setArrastrando(true);
+    dragStartYRef.current = e.clientY;
+    const currentH = listRef.current ? listRef.current.clientHeight : alturaBloquesPx;
+    startHeightRef.current = currentH;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current || !listRef.current) return;
+    const deltaY = e.clientY - dragStartYRef.current;
+    const nuevaAltura = Math.max(90, Math.min(1200, Math.round(startHeightRef.current + deltaY)));
+    listRef.current.style.height = `${nuevaAltura}px`;
+    listRef.current.style.maxHeight = `${nuevaAltura}px`;
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setArrastrando(false);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    if (listRef.current) {
+      const h = parseInt(listRef.current.style.height, 10);
+      if (!isNaN(h)) {
+        setAlturaBloquesPx(h);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("3bf_bloques_funcionales_height", String(h));
+        }
+      }
+    }
+  };
+
   if (bloques.length === 0) return null;
 
   const algunOculto = bloques.some((g) => g.oculto);
   const pasoEsArmable = pasoActivoManualId && pasoActivoManualId !== "P00";
 
   return (
-    <div className="flex flex-col gap-2 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
+    <div className="flex flex-col gap-1.5 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs">
+      {/* Cabecera compacta */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-xs">🗄️</span>
@@ -49,8 +114,12 @@ export default function FunctionalBlocksVisibilityCard() {
         </button>
       </div>
 
-      {/* Lista de Bloques Funcionales con su Ojito individual y Botón Armar en este Paso */}
-      <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 max-h-56 overflow-y-auto pr-0.5">
+      {/* Lista de Bloques Funcionales con altura ultra-fluida */}
+      <div
+        ref={listRef}
+        style={{ height: `${alturaBloquesPx}px`, maxHeight: `${alturaBloquesPx}px` }}
+        className="flex flex-col gap-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 overflow-y-auto pr-0.5 custom-scrollbar"
+      >
         {bloques.map((grupo) => {
           const esPuerta = grupo.tipo === "puerta";
           const estaOculto = Boolean(grupo.oculto);
@@ -77,7 +146,7 @@ export default function FunctionalBlocksVisibilityCard() {
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                {/* 🚀 BOTÓN 1 CLIC: Armar en este paso (Carga todas las piezas y crea la capa) */}
+                {/* 🚀 BOTÓN 1 CLIC: Armar en este paso */}
                 {pasoEsArmable && (
                   <button
                     type="button"
@@ -90,7 +159,7 @@ export default function FunctionalBlocksVisibilityCard() {
                   </button>
                 )}
 
-                {/* Botón Bombillito / Ojito por bloque */}
+                {/* Botón Ojito por bloque */}
                 <button
                   type="button"
                   onClick={() => pasoP00 && conmutarVisibilidadGrupoCinematico(pasoP00.id, grupo.id)}
@@ -107,6 +176,23 @@ export default function FunctionalBlocksVisibilityCard() {
             </div>
           );
         })}
+      </div>
+
+      {/* ↕️ Franja inferior simple y ultra-fluida (sin textos ni adornos pesados) */}
+      <div
+        onPointerDown={handleStartResize}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        title="Arrastra para ajustar la altura"
+        className="w-full py-1.5 flex items-center justify-center cursor-ns-resize select-none group"
+      >
+        <div
+          className={`w-14 h-1 rounded-full transition-colors ${
+            arrastrando
+              ? "bg-[#0088AA] dark:bg-[#1368AA]"
+              : "bg-slate-200 dark:bg-slate-700 group-hover:bg-slate-400 dark:group-hover:bg-slate-500"
+          }`}
+        />
       </div>
     </div>
   );

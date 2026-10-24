@@ -600,7 +600,7 @@ function GroundInfiniteAxes() {
 
   return (
 
-    <group position={[0, -0.00095, 0]} renderOrder={100}>
+    <group position={[0, -0.00298, 0]} renderOrder={100}>
 
       {calibracion.mostrarEjeX && (
 

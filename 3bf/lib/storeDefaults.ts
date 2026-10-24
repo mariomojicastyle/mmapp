@@ -1120,17 +1120,8 @@ export function sanitizarPasosManuales(pasos: PasoManualStudio[]): PasoManualStu
 
 
 export function getCachedManualData(): { manual: Manual3BMProyecto | null; pasos: PasoManualStudio[] } {
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
-      localStorage.removeItem(STORAGE_KEY_PASOS_MANUAL);
-      localStorage.removeItem(STORAGE_KEY_MANUAL_ACTIVO);
-      localStorage.removeItem("3bf_ultimo_mueble_id");
-    } catch (err) {
-      console.warn("[3dBimFab] Error limpiando caché local:", err);
-    }
-  }
-  // 🛡️ REGLA SUPREMA: En recarga (F5) el sistema siempre arranca 100% limpio (como recién abrir un programa CAD)
-  // 🛡️ REGLA SUPREMA: En recarga o inicio, arranca 100% limpio en Estado Virgen (pasos: [])
+  // 🛡️ REGLA SUPREMA: En recarga (F5) o nueva pestaña, el sistema arranca 100% limpio en memoria Redux (pasos: [])
+  // SIN eliminar destructivamente los datos de otras pestañas o modelos en localStorage.
   return { manual: null, pasos: [] };
 }
 
@@ -1138,14 +1129,6 @@ export function getCachedManualData(): { manual: Manual3BMProyecto | null; pasos
 export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manualActual?: Manual3BMProyecto | null) {
   if (typeof window === "undefined" || !window.localStorage) return;
   try {
-    if (!nuevosPasos || nuevosPasos.length === 0) {
-      localStorage.removeItem(STORAGE_KEY_PASOS_MANUAL);
-      localStorage.removeItem(STORAGE_KEY_MANUAL_ACTIVO);
-      localStorage.removeItem(STORAGE_KEY_LAST_MANUAL_ID);
-      return;
-    }
-    localStorage.setItem(STORAGE_KEY_PASOS_MANUAL, JSON.stringify(nuevosPasos));
-
     let manualBase = manualActual;
     if (!manualBase) {
       const prev = localStorage.getItem(STORAGE_KEY_MANUAL_ACTIVO);
@@ -1155,6 +1138,19 @@ export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manual
         } catch {}
       }
     }
+
+    // 🛡️ Segmentación de claves por mueble para aislamiento estricto multi-pestaña
+    const muebleId = manualBase?.muebleOrigenId || "";
+    const keyPasos = muebleId ? `${STORAGE_KEY_PASOS_MANUAL}_${muebleId}` : STORAGE_KEY_PASOS_MANUAL;
+    const keyManual = muebleId ? `${STORAGE_KEY_MANUAL_ACTIVO}_${muebleId}` : STORAGE_KEY_MANUAL_ACTIVO;
+
+    if (!nuevosPasos || nuevosPasos.length === 0) {
+      localStorage.removeItem(keyPasos);
+      localStorage.removeItem(keyManual);
+      localStorage.removeItem(STORAGE_KEY_LAST_MANUAL_ID);
+      return;
+    }
+    localStorage.setItem(keyPasos, JSON.stringify(nuevosPasos));
 
     const manualActualizado: Manual3BMProyecto = {
       id: manualBase?.id || (nuevosPasos[0]?.tipo === "bloque_estandar" ? `bloque_${nuevosPasos[0].id}` : "manual_estudio"),
@@ -1167,7 +1163,7 @@ export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manual
       pasos: nuevosPasos,
     };
 
-    localStorage.setItem(STORAGE_KEY_MANUAL_ACTIVO, JSON.stringify(manualActualizado));
+    localStorage.setItem(keyManual, JSON.stringify(manualActualizado));
     localStorage.setItem(STORAGE_KEY_LAST_MANUAL_ID, manualActualizado.id);
   } catch (err: any) {
     // 🛡️ Si se excede la cuota de 5MB de localStorage de Chrome, limpiar entradas pesadas para no saturar el hilo principal
@@ -1177,7 +1173,6 @@ export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manual
         localStorage.removeItem(STORAGE_KEY_MANUAL_ACTIVO);
       } catch {}
     }
-    // Silencioso para no disparar cientos de warnings en la consola de Chrome
   }
 }
 

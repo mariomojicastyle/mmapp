@@ -80,6 +80,29 @@ export const createManualBloquesSlice = (set: any, get: any): any => ({
       animacionTracks: bloque.animacionTracks,
     };
 
+    // 🛡️ Si el paso actualmente activo es un Bloque Estándar virgen (sin bloque asignado),
+    // asociarlo directamente a este paso en vez de crear uno nuevo redundante:
+    const pasoActivoActual = pasosActuales.find((p: any) => p.id === state.pasoActivoManualId);
+    if (pasoActivoActual && pasoActivoActual.tipo === "bloque_estandar" && (!pasoActivoActual.bloqueEstandar || !pasoActivoActual.bloqueEstandar.id)) {
+      const actualizados = pasosActuales.map((p: any) => {
+        if (p.id !== pasoActivoActual.id) return p;
+        return {
+          ...p,
+          titulo: bloque.nombre,
+          descripcion: bloque.descripcion,
+          duracionTotal: bloque.duracion || 8.0,
+          duracionAudioSegundos: bloque.duracion || 8.0,
+          bloqueEstandar: ref,
+          guionEs: bloque.guionEs || `Paso: ${bloque.nombre}. Sigue las instrucciones del bloque estándar.`,
+          guionPt: bloque.guionPt || `Passo: ${bloque.nombre}. Siga as instruções do bloco padrão.`,
+          guionEn: bloque.guionEn || `Step: ${bloque.nombre}. Follow the standard block instructions.`,
+        };
+      });
+      set({ pasosManual: actualizados, timelineCurrentTime: 0, isTimelinePlaying: false });
+      guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+      return;
+    }
+
     const nuevoPaso: PasoManualStudio = {
       id: "TEMP",
       numero: 1,
@@ -133,6 +156,29 @@ export const createManualBloquesSlice = (set: any, get: any): any => ({
       partesGlb: bloque.partesGlb,
       animacionTracks: bloque.animacionTracks,
     };
+
+    // 🛡️ Si el paso actualmente activo es un Bloque Estándar virgen (sin bloque asignado),
+    // asociarlo directamente a este paso en vez de crear uno nuevo redundante:
+    const pasoActivoActual = pasosActuales.find((p: any) => p.id === state.pasoActivoManualId);
+    if (pasoActivoActual && pasoActivoActual.tipo === "bloque_estandar" && (!pasoActivoActual.bloqueEstandar || !pasoActivoActual.bloqueEstandar.id)) {
+      const actualizados = pasosActuales.map((p: any) => {
+        if (p.id !== pasoActivoActual.id) return p;
+        return {
+          ...p,
+          titulo: bloque.nombre,
+          descripcion: bloque.descripcion,
+          duracionTotal: bloque.duracion || 8.0,
+          duracionAudioSegundos: bloque.duracion || 8.0,
+          bloqueEstandar: ref,
+          guionEs: bloque.guionEs || `Paso: ${bloque.nombre}. Sigue las instrucciones del bloque estándar.`,
+          guionPt: bloque.guionPt || `Passo: ${bloque.nombre}. Siga as instruções do bloco padrão.`,
+          guionEn: bloque.guionEn || `Step: ${bloque.nombre}. Follow the standard block instructions.`,
+        };
+      });
+      set({ pasosManual: actualizados, timelineCurrentTime: 0, isTimelinePlaying: false });
+      guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+      return;
+    }
 
     const pasoEdicion: PasoManualStudio = {
       id: "P01",

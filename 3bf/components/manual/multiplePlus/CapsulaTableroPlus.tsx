@@ -1,8 +1,168 @@
 "use client";
 
 import React from "react";
-import { Crosshair, X, Eye, ArrowRight, RotateCcw } from "lucide-react";
+import * as THREE from "three";
+import { Crosshair, X, Eye, ArrowRight, RotateCcw, ArrowDown } from "lucide-react";
 import { TableroCapaPlus } from "@/lib/storeTypes";
+import { use3BFStore } from "@/lib/store";
+import { extraerPiezaMadre } from "@/lib/piezaMadreUtils";
+
+/**
+ * Calcula el offset vertical efectivo del contenedor del mueble (SingleFurnitureInstanceMesh)
+ * considerando rotación del banco de trabajo, apoyoEnPiso y elevación de zócalos/patas.
+ */
+function calcularOffsetContenedorMueble(
+  meshes: any[],
+  paso: any,
+  instPosicionY: number = 0
+): number {
+  if (!paso) return instPosicionY;
+
+  const orientacionBanco = paso.orientacionBanco || paso.multiplePlus?.orientacionBanco;
+  const apoyoEnPiso = orientacionBanco?.apoyoEnPiso ?? true;
+  const alturaZCm = paso.multiplePlus?.alturaZCm ?? orientacionBanco?.alturaZCm ?? 0;
+  const alturaZM = alturaZCm / 100;
+  const rotBanco = orientacionBanco?.rotacion || [0, 0, 0];
+
+  const rotX = rotBanco[0] || 0;
+  const rotY = rotBanco[1] || 0;
+  const rotZ = rotBanco[2] || 0;
+
+  if (rotX === 0 && rotY === 0 && rotZ === 0 && !apoyoEnPiso && alturaZM === 0) {
+    return instPosicionY;
+  }
+
+  const radThreeX = THREE.MathUtils.degToRad(rotX);
+  const radThreeY = THREE.MathUtils.degToRad(rotZ);
+  const radThreeZ = -THREE.MathUtils.degToRad(rotY);
+  const euler = new THREE.Euler(radThreeX, radThreeY, radThreeZ, "XYZ");
+  const rotMat = new THREE.Matrix4().makeRotationFromEuler(euler);
+
+  // Mallas asignadas del paso activo
+  const piezasTarget = paso.piezasAsignadas || [];
+  const mallasCandidatas = piezasTarget.length > 0
+    ? meshes.filter((m: any) => {
+        const cn = (m.cleanName || m.name || "").toLowerCase().trim();
+        const ik = (m.instanciaKey || "").toLowerCase().trim();
+        return piezasTarget.some((p: string) => {
+          const pLow = p.toLowerCase().trim();
+          return cn === pLow || ik === pLow || cn.includes(pLow) || pLow.includes(cn);
+        });
+      })
+    : meshes;
+
+  const mallasTableros = mallasCandidatas.filter((m: any) => {
+    const n = (m.name || "").toLowerCase();
+    const ik = (m.instanciaKey || "").toLowerCase();
+    return !n.includes("tornillo") && !n.includes("corre") && !n.includes("herraje") && !ik.includes("tornillo");
+  });
+
+  const meshesParaBox = mallasTableros.length > 0 ? mallasTableros : mallasCandidatas;
+  if (meshesParaBox.length === 0) return instPosicionY + alturaZM;
+
+  const localBox = new THREE.Box3();
+  for (const m of meshesParaBox) {
+    const [pX, pY, pZ] = m.position || [0, 0, 0];
+    const [sx, sy, sz] = m.size || [0.4, 0.4, 0.015];
+    localBox.expandByPoint(new THREE.Vector3(pX - sx / 2, pY - sy / 2, pZ - sz / 2));
+    localBox.expandByPoint(new THREE.Vector3(pX + sx / 2, pY + sy / 2, pZ + sz / 2));
+  }
+
+  if (localBox.isEmpty()) return instPosicionY + alturaZM;
+
+  const corners: THREE.Vector3[] = [
+    new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.min.z),
+    new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.max.z),
+    new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.min.z),
+    new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.max.z),
+    new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.min.z),
+    new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.max.z),
+    new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.min.z),
+    new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.max.z),
+  ];
+
+  let minYRotado = Infinity;
+  for (const c of corners) {
+    const cRot = c.clone().applyMatrix4(rotMat);
+    if (cRot.y < minYRotado) minYRotado = cRot.y;
+  }
+
+  const unrotatedCenter = new THREE.Vector3();
+  localBox.getCenter(unrotatedCenter);
+  const offsetEjeCm = paso.multiplePlus?.offsetEjeRotacionCm ?? 30;
+  const ejePivote = unrotatedCenter.clone();
+  ejePivote.y += offsetEjeCm / 100;
+  const rotatedPivot = ejePivote.clone().applyMatrix4(rotMat);
+
+  const offsetY = (apoyoEnPiso ? -minYRotado : (ejePivote.y - rotatedPivot.y)) + alturaZM;
+  return instPosicionY + offsetY;
+}
+
+/**
+ * Calcula con precisión submilimétrica la distancia vertical (en cm) requerida para
+ * que la cara inferior del tablero rotado descanse exactamente al ras del suelo (Y = 0),
+ * compensando exactamente el desplazamiento de contenedor del mueble.
+ */
+function calcularSueloTablero(
+  tableroId: string,
+  rotacionGrados: [number, number, number],
+  meshes: any[],
+  paso?: any,
+  instPosicionY: number = 0
+): number {
+  const tLow = tableroId.toLowerCase().trim();
+  const tMadre = extraerPiezaMadre(tLow).toLowerCase().trim();
+
+  const meshData = meshes.find((m: any) => {
+    const cn = (m.cleanName || m.name || "").toLowerCase().trim();
+    const pm = (m.piezaMadre || extraerPiezaMadre(cn)).toLowerCase().trim();
+    const ik = (m.instanciaKey || "").toLowerCase().trim();
+    return cn === tLow || pm === tLow || ik === tLow || (tMadre && (pm === tMadre || cn === tMadre));
+  });
+
+  if (!meshData || !meshData.position) return 0;
+
+  const [, pY] = meshData.position;
+  const size = meshData.size || [0.4, 0.4, 0.015];
+  const [sx, sy, sz] = size;
+
+  // Matriz de rotación individual del tablero (XYZ)
+  const radX = THREE.MathUtils.degToRad(rotacionGrados[0] || 0);
+  const radY = THREE.MathUtils.degToRad(rotacionGrados[1] || 0);
+  const radZ = THREE.MathUtils.degToRad(rotacionGrados[2] || 0);
+  const rotMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(radX, radY, radZ, "XYZ"));
+
+  const hx = sx / 2;
+  const hy = sy / 2;
+  const hz = sz / 2;
+
+  const corners = [
+    new THREE.Vector3(-hx, -hy, -hz),
+    new THREE.Vector3(-hx, -hy, hz),
+    new THREE.Vector3(-hx, hy, -hz),
+    new THREE.Vector3(-hx, hy, hz),
+    new THREE.Vector3(hx, -hy, -hz),
+    new THREE.Vector3(hx, -hy, hz),
+    new THREE.Vector3(hx, hy, -hz),
+    new THREE.Vector3(hx, hy, hz),
+  ];
+
+  let minYRot = Infinity;
+  for (const c of corners) {
+    c.applyMatrix4(rotMat);
+    if (c.y < minYRot) minYRot = c.y;
+  }
+
+  // 🌟 Altura Y del contenedor global (banco de trabajo / suelo / compensación zócalo)
+  const containerWorldY = calcularOffsetContenedorMueble(meshes, paso, instPosicionY);
+
+  // Cota inferior real de la pieza en el mundo Three.js (en metros)
+  const cotaInferiorM_World = containerWorldY + (pY + minYRot);
+
+  // Elevación necesaria para que la cara inferior quede exactamente en Y = 0 (en cm)
+  const elevacionCm = Math.round(-cotaInferiorM_World * 100 * 10) / 10;
+  return elevacionCm;
+}
 
 interface CapsulaTableroPlusProps {
   tablero: TableroCapaPlus;
@@ -27,6 +187,7 @@ export function CapsulaTableroPlus({
   onRemover,
   onTogglePosicionar,
 }: CapsulaTableroPlusProps) {
+  const { resultado, instancias, objetoActivoId, pasosManual } = use3BFStore();
   const rotacion = tablero.rotacionGrados || [0, 0, 0];
   const tieneGiro = Boolean(rotacion[0] !== 0 || rotacion[1] !== 0 || rotacion[2] !== 0);
 
@@ -141,12 +302,34 @@ export function CapsulaTableroPlus({
   const commitElevacion = React.useCallback(() => {
     setEditandoElevacion(false);
     const parsed = parseFloat(textoElevacion);
-    const finalVal = isNaN(parsed) ? 0 : Math.max(0, Math.round(parsed * 10) / 10);
+    const finalVal = isNaN(parsed) ? 0 : Math.round(parsed * 10) / 10;
     setTextoElevacion(String(finalVal));
     if (finalVal !== (tablero.elevacionZCm ?? 0)) {
       onActualizar(tablero.id, { elevacionZCm: finalVal });
     }
   }, [textoElevacion, tablero.elevacionZCm, tablero.id, onActualizar]);
+
+  // ⤓ Función para bajar este tablero al ras del suelo (Y = 0) de un solo clic
+  const handleBajarAlSuelo = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const activeInst = objetoActivoId ? instancias[objetoActivoId] : null;
+      const resEfectivo = activeInst?.resultado || resultado;
+      const meshes: any[] = resEfectivo?.real_meshes || (resEfectivo as any)?.meshes || [];
+      if (meshes.length === 0) return;
+
+      const pasoActivo = (pasosManual || []).find((p) => p.id === pasoId);
+      const instPosY = activeInst?.posicion?.[1] || 0;
+
+      const elevacionCalculadaCm = calcularSueloTablero(tablero.id, rotacion, meshes, pasoActivo, instPosY);
+      const yaEnSuelo = Math.abs((tablero.elevacionZCm || 0) - elevacionCalculadaCm) < 0.2;
+      const nuevoValor = yaEnSuelo ? 0 : elevacionCalculadaCm;
+
+      setTextoElevacion(String(nuevoValor));
+      onActualizar(tablero.id, { elevacionZCm: nuevoValor });
+    },
+    [tablero.id, tablero.elevacionZCm, rotacion, resultado, instancias, objetoActivoId, pasosManual, pasoId, onActualizar]
+  );
 
   return (
     <div
@@ -253,7 +436,7 @@ export function CapsulaTableroPlus({
       {/* 📐 Altura Z sobre el banco/suelo (elevación en cm) */}
       <div
         onClick={(e) => e.stopPropagation()}
-        title="Altura Z sobre el banco/suelo (elevación en cm para despejar tarugos inferiores). Presiona Enter o haz clic fuera para confirmar."
+        title="Altura Z sobre el banco/suelo (elevación en cm para asentar en el piso o despejar tarugos). Presiona Enter o haz clic fuera para confirmar."
         className="inline-flex items-center gap-0.5 bg-white dark:bg-slate-900 px-1.5 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8.5px] shadow-2xs"
       >
         <span className="font-bold text-amber-600 dark:text-amber-400 text-[8px]">Z:</span>
@@ -279,9 +462,23 @@ export function CapsulaTableroPlus({
           onChange={(e) => {
             setTextoElevacion(e.target.value);
           }}
-          className="w-[28px] min-w-[28px] bg-transparent text-right font-mono font-bold text-[8.5px] text-amber-700 dark:text-amber-300 outline-none p-0 border-none cursor-text"
+          className="w-[32px] min-w-[32px] bg-transparent text-right font-mono font-bold text-[8.5px] text-amber-700 dark:text-amber-300 outline-none p-0 border-none cursor-text"
         />
         <span className="text-[7.5px] font-bold text-slate-400">cm</span>
+
+        {/* ⤓ Botón Flechita hacia abajo: Asentar al ras del suelo */}
+        <button
+          type="button"
+          onClick={handleBajarAlSuelo}
+          title="Asentar este tablero al ras del suelo (Y = 0) arrastrando solidariamente sus herrajes. Clic de nuevo para restaurar a 0."
+          className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
+            (tablero.elevacionZCm || 0) !== 0
+              ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-2xs"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+          }`}
+        >
+          <ArrowDown className="w-2 h-2" />
+        </button>
       </div>
 
       {/* 🔄 Triple Píldora Cíclica de Giro 3D Inline (Opción 2) */}

@@ -64,6 +64,10 @@ function easeOutQuad(x: number): number {
 }
 
 export default function BloqueEstandar3DScene({ paso, timelineTime }: BloqueEstandar3DSceneProps) {
+  // 🛡️ Escenario Virgen: Si el paso no tiene un bloque estándar asignado con partes GLB, no renderizar nada
+  if (!paso.bloqueEstandar || !paso.bloqueEstandar.partesGlb || paso.bloqueEstandar.partesGlb.length === 0) {
+    return null;
+  }
   const [modelosCargados, setModelosCargados] = useState<{
     fija?: THREE.Group;
     intermedia?: THREE.Group;
@@ -108,7 +112,7 @@ export default function BloqueEstandar3DScene({ paso, timelineTime }: BloqueEsta
 
     // Resolver rutas dinámicas desde el paso activo
     const partes = paso.bloqueEstandar?.partesGlb || [];
-    const carpeta = paso.bloqueEstandar?.carpetaModelos || "/library/bloques/modelos/corredera_telescopica_350";
+    const carpeta = paso.bloqueEstandar?.carpetaModelos || "";
 
     const getRuta = (keyword: string, fallbackFileName: string) => {
       const encontrada = partes.find((p) =>

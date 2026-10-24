@@ -6,7 +6,7 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { Line, Html } from "@react-three/drei";
 import { use3BFStore } from "@/lib/store";
 import { extraerPiezaMadre, extraerFamiliaPieza, perteneceAMismaFamiliaPieza } from "@/lib/piezaMadreUtils";
-import { getSafeRestPosition, coincidenMismoHerraje, isHardwareMeshName } from "@/lib/engine/cadStateUtils";
+import { getSafeRestPosition, coincidenMismoHerraje, isHardwareMeshName, resolverTableroAnfitrionHerraje } from "@/lib/engine/cadStateUtils";
 
 interface TargetMeshItem {
   mesh: THREE.Mesh;
@@ -123,8 +123,54 @@ export function AssemblyPiecePositioner({
           return perteneceAMismaFamiliaPieza(tId, targetKey);
         });
         if (tieneTablero) {
-          (capa.herrajes || []).forEach((h) => herrajesCohesionadosSet.add(h.id.toLowerCase().trim()));
-          (capa.congelados || []).forEach((c) => herrajesCohesionadosSet.add(c.id.toLowerCase().trim()));
+          if ((capa.tableros || []).length <= 1) {
+            (capa.herrajes || []).forEach((h) => herrajesCohesionadosSet.add(h.id.toLowerCase().trim()));
+            (capa.congelados || []).forEach((c) => herrajesCohesionadosSet.add(c.id.toLowerCase().trim()));
+          } else {
+            // 🛡️ Capa multi-tablero: Solo asociar herrajes cuyo anfitrión geométrico en CAD sea este tablero
+            const sceneMeshes: THREE.Mesh[] = [];
+            furnitureGroup?.traverse((obj) => {
+              if ((obj as THREE.Mesh).isMesh) sceneMeshes.push(obj as THREE.Mesh);
+            });
+
+            const tablerosRefs = (capa.tableros || []).map((tb) => {
+              const tbMeshes = sceneMeshes.filter((m) => {
+                const cn = ((m.userData?.cleanName || m.name || "") as string).toLowerCase().trim();
+                const pm = ((m.userData?.piezaMadre || "") as string).toLowerCase().trim();
+                const ik = ((m.userData?.instanciaKey || "") as string).toLowerCase().trim();
+                return cn === tb.id.toLowerCase().trim() || pm === tb.id.toLowerCase().trim() || ik === tb.id.toLowerCase().trim();
+              });
+              const box = new THREE.Box3();
+              const pProm = new THREE.Vector3();
+              tbMeshes.forEach((m) => {
+                const p = getSafeRestPosition(m);
+                box.expandByPoint(p);
+                pProm.add(p);
+              });
+              if (tbMeshes.length > 0) pProm.divideScalar(tbMeshes.length);
+              return {
+                id: tb.id,
+                boxRestWorld: box,
+                restWorldPos: pProm,
+              };
+            });
+
+            const todosHw = [...(capa.herrajes || []), ...(capa.congelados || [])];
+            todosHw.forEach((h) => {
+              const hwMesh = sceneMeshes.find((m) => {
+                const cn = ((m.userData?.cleanName || m.name || "") as string).toLowerCase().trim();
+                const ik = ((m.userData?.instanciaKey || "") as string).toLowerCase().trim();
+                return coincidenMismoHerraje(h.id, cn) || coincidenMismoHerraje(h.id, ik);
+              });
+              if (hwMesh) {
+                const pHw = getSafeRestPosition(hwMesh);
+                const anfitrion = resolverTableroAnfitrionHerraje(pHw, tablerosRefs);
+                if (anfitrion && (anfitrion.id.toLowerCase().trim() === targetKey || perteneceAMismaFamiliaPieza(anfitrion.id, targetKey))) {
+                  herrajesCohesionadosSet.add(h.id.toLowerCase().trim());
+                }
+              }
+            });
+          }
         }
       }
     }

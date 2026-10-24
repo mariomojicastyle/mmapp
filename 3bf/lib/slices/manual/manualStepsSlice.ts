@@ -308,6 +308,8 @@ export const createManualStepsSlice = (set: any, get: any): any => {
 
         movimientoGlobalCm: 20,
 
+        modoVisualizacionInactivos: "cristal",
+
         capas: [],
 
       } : undefined,
@@ -382,7 +384,7 @@ export const createManualStepsSlice = (set: any, get: any): any => {
 
     const state = get();
 
-    if (pasoId === "P00" || state.pasosManual.length <= 1) return;
+    if (!pasoId || !state.pasosManual || state.pasosManual.length === 0) return;
 
     const filtrados = state.pasosManual.filter((p: any) => p.id !== pasoId);
 

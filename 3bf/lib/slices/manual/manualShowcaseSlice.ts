@@ -75,7 +75,13 @@ export const createManualShowcaseSlice = (set: any, get: any): any => ({
         },
       };
     });
-    set({ pasosManual: actualizados });
+    set({
+      pasosManual: actualizados,
+      versionAnimacionManual: (state.versionAnimacionManual || 0) + 1,
+    });
+    if (typeof window !== "undefined" && window.__3bfDespertarAnimacion) {
+      window.__3bfDespertarAnimacion();
+    }
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
@@ -94,7 +100,13 @@ export const createManualShowcaseSlice = (set: any, get: any): any => ({
         },
       };
     });
-    set({ pasosManual: actualizados });
+    set({
+      pasosManual: actualizados,
+      versionAnimacionManual: (state.versionAnimacionManual || 0) + 1,
+    });
+    if (typeof window !== "undefined" && window.__3bfDespertarAnimacion) {
+      window.__3bfDespertarAnimacion();
+    }
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
@@ -242,11 +254,31 @@ export const createManualShowcaseSlice = (set: any, get: any): any => ({
 
   conmutarOcultarNoAsignadasPaso: (pasoId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId) return p;
-      return { ...p, ocultarNoAsignadas: !p.ocultarNoAsignadas };
+      const nuevoOcultar = !p.ocultarNoAsignadas;
+      const mp = p.multiplePlus;
+      return {
+        ...p,
+        ocultarNoAsignadas: nuevoOcultar,
+        multiplePlus: mp ? {
+          ...mp,
+          modoVisualizacionInactivos: nuevoOcultar ? "oculto" : (mp.modoVisualizacionInactivos === "oculto" ? "cristal" : (mp.modoVisualizacionInactivos || "cristal")),
+        } : mp,
+      };
     });
-    set({ pasosManual: actualizados });
+
+    set({
+      pasosManual: actualizados,
+      versionAnimacionManual: (state.versionAnimacionManual || 0) + 1,
+    });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
+
+    if (typeof window !== "undefined" && (window as any).__3bfDespertarAnimacion) {
+      (window as any).__3bfDespertarAnimacion();
+    }
   },
 });

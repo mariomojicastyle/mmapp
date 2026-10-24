@@ -109,11 +109,11 @@ export function compilarAnimacionPaso(
         restaurarACadOriginal(child);
         child.userData.__baseRestPosition = child.position.clone();
         child.userData.__baseRestQuaternion = child.quaternion.clone();
-        child.userData.__baseRestScale = child.scale.clone();
+        child.userData.__baseRestScale = (child.scale && child.scale.x > 0.001) ? child.scale.clone() : new THREE.Vector3(1, 1, 1);
       } else {
         child.userData.__baseRestPosition = child.position.clone();
         child.userData.__baseRestQuaternion = child.quaternion.clone();
-        child.userData.__baseRestScale = child.scale.clone();
+        child.userData.__baseRestScale = (child.scale && child.scale.x > 0.001) ? child.scale.clone() : new THREE.Vector3(1, 1, 1);
       }
     }
     if ((child as THREE.Mesh).isMesh) {
@@ -137,6 +137,7 @@ export function compilarAnimacionPaso(
       mesh.position.copy(rest);
       const restQ = getSafeRestQuaternion(mesh);
       mesh.quaternion.copy(restQ);
+      mesh.scale.set(1, 1, 1);
       mesh.updateMatrix();
       mesh.updateMatrixWorld(true);
     });
@@ -257,7 +258,11 @@ export function compilarAnimacionPaso(
           mesh.quaternion.copy(mesh.userData.__baseRestQuaternion);
         }
         if (mesh.userData.__baseRestScale) {
-          mesh.scale.copy(mesh.userData.__baseRestScale);
+          if (mesh.userData.__baseRestScale.x > 0.001) {
+            mesh.scale.copy(mesh.userData.__baseRestScale);
+          } else {
+            mesh.scale.set(1, 1, 1);
+          }
         }
       });
       if (rootScene.userData.__baseRestPosition) {

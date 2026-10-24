@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check, RotateCw, MousePointerClick, ChevronDown } from "lucide-react";
+import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check, RotateCw, MousePointerClick, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { MemoryPosesLED } from "./MemoryPosesLED";
 
 // =========================================================================
@@ -173,7 +173,18 @@ function limpiarEtiqueta(paramKey: string): string {
 }
 
 function RenderParamControl({ paramKey }: { paramKey: string }) {
-  const { parametros, setParametro, resultado, objetoActivoId, instancias, setParametroInstancia, coloresApariencia, guardarEstadoHistorial } = use3BFStore();
+  const { 
+    parametros, 
+    setParametro, 
+    resultado, 
+    objetoActivoId, 
+    instancias, 
+    setParametroInstancia, 
+    coloresApariencia, 
+    guardarEstadoHistorial,
+    sujecionesOcultas,
+    conmutarVisibilidadSujecion,
+  } = use3BFStore();
   const activeId = objetoActivoId;
   const instanciaActiva = activeId ? instancias[activeId] : null;
   const currentParams = instanciaActiva ? instanciaActiva.parametros : parametros;
@@ -189,6 +200,12 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
 
   const isValueList = limit?.type === "valuelist" || (limit?.options && limit.options.length > 0);
   const esSlider = !isValueList && (limit?.type === "slider" || limit?.min !== undefined || typeof value === "number");
+
+  const esSujecion = label.toLowerCase().includes("sujecion") || 
+                     label.toLowerCase().includes("sujeción") || 
+                     paramKey.toLowerCase().includes("sujecion") || 
+                     paramKey.toLowerCase().includes("sujeción");
+  const estaOculto = Boolean(sujecionesOcultas?.[paramKey]);
 
   // Si es un Slider Numérico
   if (esSlider) {
@@ -213,13 +230,32 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
         className="flex flex-col gap-1 lg:gap-1.5 p-1.5 lg:p-2 rounded-lg border shadow-2xs lg:shadow-xs text-[11px] lg:text-xs"
       >
         <div className="flex justify-between font-medium items-center">
-          <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[10.5px] lg:text-xs">{label}</label>
-          <DirectNumberInput
-            value={numVal}
-            min={minVal}
-            max={maxVal}
-            onChange={(val, deb) => handleNumChange(val, deb ?? 0)}
-          />
+          <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[10.5px] lg:text-xs truncate">{label}</label>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {esSujecion && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  conmutarVisibilidadSujecion(paramKey);
+                }}
+                title={estaOculto ? "Herraje oculto en 3D (clic para mostrar)" : "Ocultar herraje para inspeccionar mecanizado"}
+                className={`w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition shrink-0 ${
+                  estaOculto 
+                    ? "bg-amber-500/20 text-amber-500 border border-amber-500/40 hover:bg-amber-500/30" 
+                    : "text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                {estaOculto ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              </button>
+            )}
+            <DirectNumberInput
+              value={numVal}
+              min={minVal}
+              max={maxVal}
+              onChange={(val, deb) => handleNumChange(val, deb ?? 0)}
+            />
+          </div>
         </div>
         <input
           type="range"
@@ -285,25 +321,46 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
         backgroundColor: coloresApariencia?.fondoPaneles, 
         borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
       }}
-      className="flex justify-between items-center p-1.5 lg:p-2 rounded-lg border text-[11px] lg:text-xs shadow-2xs lg:shadow-sm"
+      className="flex justify-between items-center p-1.5 lg:p-2 rounded-lg border text-[11px] lg:text-xs shadow-2xs lg:shadow-sm gap-2"
     >
-      <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[10.5px] lg:text-xs">{label}:</span>
-      <select
-        value={selectedValue}
-        onChange={(e) => handleSelectChange(e.target.value)}
-        style={{ 
-          borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
-          backgroundColor: coloresApariencia?.fondoAplicacion,
-          color: coloresApariencia?.textoPrincipal
-        }}
-        className="text-[10.5px] lg:text-xs p-0.5 lg:p-1 px-1.5 rounded-lg border font-bold outline-none cursor-pointer"
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
+      <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[10.5px] lg:text-xs truncate">
+        {label}:
+      </span>
+      <div className="flex items-center gap-1.5 shrink-0">
+        {esSujecion && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              conmutarVisibilidadSujecion(paramKey);
+            }}
+            title={estaOculto ? "Herraje oculto en 3D (clic para mostrar)" : "Ocultar herraje para inspeccionar mecanizado"}
+            className={`w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition shrink-0 ${
+              estaOculto 
+                ? "bg-amber-500/20 text-amber-500 border border-amber-500/40 hover:bg-amber-500/30" 
+                : "text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            }`}
+          >
+            {estaOculto ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+          </button>
+        )}
+        <select
+          value={selectedValue}
+          onChange={(e) => handleSelectChange(e.target.value)}
+          style={{ 
+            borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+            backgroundColor: coloresApariencia?.fondoAplicacion,
+            color: coloresApariencia?.textoPrincipal
+          }}
+          className="text-[10.5px] lg:text-xs p-0.5 lg:p-1 px-1.5 rounded-full border font-bold outline-none cursor-pointer shrink-0"
+        >
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

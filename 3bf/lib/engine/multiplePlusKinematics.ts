@@ -22,6 +22,7 @@ import {
   resolverTableroAnfitrionHerraje,
   TableroCapaReferencia,
   isHardwareMeshName,
+  isPataOSoporteSuelo,
 } from "./cadStateUtils";
 
 /**
@@ -1393,18 +1394,24 @@ export function compilarMultiplePlusPaso(
 
   // ─────────────────────────────────────────────────────────────────────────
   // 💡 3. AISLAMIENTO Y VISIBILIDAD DE PIEZAS INACTIVAS (Fuera de Capas y Heredados)
-  // 🛡️ REGLA CANÓNICA: Las piezas de Bloques Funcionales (ej. Cajones) NO pertenecen a inactivos.
+  // 🛡️ REGLA CANÓNICA: Las piezas de Bloques Funcionales (ej. Cajones) solo se ocultan si su bloque está explícitamente apagado (oculto: true)
   // ─────────────────────────────────────────────────────────────────────────
-  const bloquesFuncionalesSet = new Set<string>();
+  const modoInactivos = paso.multiplePlus?.modoVisualizacionInactivos || "cristal";
+  const estaAisladoPorInvertir = Boolean(paso.ocultarNoAsignadas);
+  const estaEnPickingActivo = Boolean(use3BFStore.getState()?.modoPickingManual?.activo);
+
+  const bloquesFuncionalesOcultosSet = new Set<string>();
   const todosLosGrupos = [
     ...(paso?.showcase?.gruposCinematicos || []),
     ...(todosLosPasos.flatMap((p: any) => p.showcase?.gruposCinematicos || [])),
   ];
   todosLosGrupos.forEach((g: any) => {
-    (g.piezas || []).forEach((piez: string) => {
-      const cleanPiez = (piez || "").toLowerCase().trim();
-      if (cleanPiez) bloquesFuncionalesSet.add(cleanPiez);
-    });
+    if (g.oculto === true) {
+      (g.piezas || []).forEach((piez: string) => {
+        const cleanPiez = (piez || "").toLowerCase().trim();
+        if (cleanPiez) bloquesFuncionalesOcultosSet.add(cleanPiez);
+      });
+    }
   });
 
   sceneMeshes.forEach((m) => {
@@ -1418,23 +1425,24 @@ export function compilarMultiplePlusPaso(
     const ik = (u.instanciaKey || "").toLowerCase().trim();
     const esHw = isHardwareMeshName(m.name) || isHardwareMeshName(cn) || (ik ? isHardwareMeshName(ik) : false);
 
-    const esDeBloqueFuncional = Array.from(bloquesFuncionalesSet).some((bf) => {
+    const esDeBloqueOculto = Array.from(bloquesFuncionalesOcultosSet).some((bf) => {
       if (esHw) {
         return bf === ik || bf === cn || coincidenMismoHerraje(bf, ik) || coincidenMismoHerraje(bf, cn);
       }
       return bf === ik || bf === cn || bf === pm || perteneceAMismaFamiliaPieza(ik, bf) || perteneceAMismaFamiliaPieza(cn, bf);
     });
 
-    if (esDeBloqueFuncional) {
-      // 🛡️ Las piezas de Bloques Funcionales permanecen ocultas en los pasos de ensamble donde no están activas
+    // 🛡️ REGLA 1: Si pertenece a un bloque funcional explícitamente apagado (y no estamos en picking)
+    if (esDeBloqueOculto && !estaEnPickingActivo) {
       agregarTrack(
         crearTrackEscalaSanitizado(`${m.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
       );
       return;
     }
 
-    const modoInactivos = paso.multiplePlus?.modoVisualizacionInactivos || "oculto";
-    if (modoInactivos === "cristal" || modoInactivos === "global") {
+    // 🛡️ REGLA 2: Modo de Inactivos ("cristal" | "global" | "oculto")
+    const debeOcultarInactivo = modoInactivos === "oculto" || (estaAisladoPorInvertir && modoInactivos !== "cristal" && modoInactivos !== "global");
+    if (!debeOcultarInactivo && (modoInactivos === "cristal" || modoInactivos === "global")) {
       // 💎 MODO CRISTAL o 🌐 MODO GLOBAL: Permanecen visibles en escala 1.0 en su posición de reposo
       const pRest = getSafeRestPosition(m);
       agregarTrack(
@@ -1448,13 +1456,12 @@ export function compilarMultiplePlusPaso(
         )
       );
     } else {
-      // 👁️‍🗨️ MODO OCULTO: Escala 0 continua incondicional para piezas inactivas
+      // 👁️‍🗨️ MODO OCULTO (o aislado por Invertir): Escala 0 continua incondicional para piezas inactivas
       agregarTrack(
         crearTrackEscalaSanitizado(`${m.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
       );
     }
   });
-
   // =========================================================================
   // 🌟 ANIMACIÓN DE PUESTA DE PIE AL FINAL (Poner el mueble de pie a 0°)
   // =========================================================================
@@ -1500,6 +1507,7 @@ export function compilarMultiplePlusPaso(
     const mallasTableros = mallasCandidatas.filter((m: any) => {
       const n = (m.name || "").toLowerCase();
       const ik = (m.userData?.instanciaKey || "").toLowerCase();
+      if (isPataOSoporteSuelo(n) || isPataOSoporteSuelo(ik)) return true;
       return !isHardwareMeshName(n) && !isHardwareMeshName(ik);
     });
 

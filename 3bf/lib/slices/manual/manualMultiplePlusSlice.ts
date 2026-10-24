@@ -7,7 +7,7 @@ import {
   resolverTableroAnfitrionHerraje, 
   TableroCapaReferencia 
 } from "../../engine/cadStateUtils";
-import { perteneceAMismaFamiliaPieza } from "../../piezaMadreUtils";
+import { perteneceAMismaFamiliaPieza, extraerPiezaMadre } from "../../piezaMadreUtils";
 import type {
   CapaMultiplePlus,
   TableroCapaPlus,
@@ -246,22 +246,45 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
+      const nuevasCapas = (p.multiplePlus.capas || []).map((c: any) => {
+        if (c.id !== capaId) return c;
+        return {
+          ...c,
+          tableros: c.tableros.filter((t: any) => t.id !== tableroId),
+        };
+      });
+      const existeEnOtra = nuevasCapas.some((c: any) =>
+        (c.tableros || []).some((t: any) => t.id === tableroId)
+      );
+      const nuevasPiezasAsignadas = existeEnOtra
+        ? (p.piezasAsignadas || [])
+        : (p.piezasAsignadas || []).filter((pz: string) => pz !== tableroId && extraerPiezaMadre(pz) !== extraerPiezaMadre(tableroId));
+
       return {
         ...p,
+        piezasAsignadas: nuevasPiezasAsignadas,
         multiplePlus: {
           ...p.multiplePlus,
-          capas: (p.multiplePlus.capas || []).map((c: any) => {
-            if (c.id !== capaId) return c;
-            return {
-              ...c,
-              tableros: c.tableros.filter((t: any) => t.id !== tableroId),
-            };
-          }),
+          capas: nuevasCapas,
         },
       };
     });
 
-    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: (state.modoPickingManual.piezasTemporalmenteSeleccionadas || []).filter(
+          (pz: string) => pz !== tableroId && extraerPiezaMadre(pz) !== extraerPiezaMadre(tableroId)
+        ),
+      };
+    }
+
+    set({
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+      versionAnimacionManual: (state.versionAnimacionManual || 0) + 1,
+    });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
     if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
@@ -342,23 +365,50 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
+      const nuevasCapas = (p.multiplePlus.capas || []).map((c: any) => {
+        if (c.id !== capaId) return c;
+        return {
+          ...c,
+          herrajes: c.herrajes.filter((h: any) => h.id !== herrajeId),
+          congelados: (c.congelados || []).filter((h: any) => h.id !== herrajeId),
+        };
+      });
+      const existeEnOtra = nuevasCapas.some((c: any) =>
+        (c.herrajes || []).some((h: any) => h.id === herrajeId) ||
+        (c.congelados || []).some((h: any) => h.id === herrajeId)
+      );
+      const nuevosHerrajesAsignados = existeEnOtra
+        ? (p.herrajesAsignados || [])
+        : (p.herrajesAsignados || []).filter((h: any) => {
+            const hId = typeof h === "string" ? h : h.id;
+            return hId !== herrajeId && !coincidenMismoHerraje(hId, herrajeId);
+          });
+
       return {
         ...p,
+        herrajesAsignados: nuevosHerrajesAsignados,
         multiplePlus: {
           ...p.multiplePlus,
-          capas: (p.multiplePlus.capas || []).map((c: any) => {
-            if (c.id !== capaId) return c;
-            return {
-              ...c,
-              herrajes: c.herrajes.filter((h: any) => h.id !== herrajeId),
-              congelados: (c.congelados || []).filter((h: any) => h.id !== herrajeId),
-            };
-          }),
+          capas: nuevasCapas,
         },
       };
     });
 
-    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: (state.modoPickingManual.piezasTemporalmenteSeleccionadas || []).filter(
+          (pz: string) => pz !== herrajeId && !coincidenMismoHerraje(pz, herrajeId)
+        ),
+      };
+    }
+
+    set({
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+      versionAnimacionManual: (state.versionAnimacionManual || 0) + 1,
+    });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
     if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
@@ -1300,6 +1350,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
       };
       return {
         ...p,
+        ocultarNoAsignadas: modo === "oculto",
         multiplePlus: {
           ...mp,
           modoVisualizacionInactivos: modo,

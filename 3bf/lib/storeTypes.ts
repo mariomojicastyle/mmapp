@@ -899,6 +899,11 @@ export interface State3BF {
   parametros: ParametrosMueble;
   setParametro: <K extends keyof ParametrosMueble>(key: K, value: ParametrosMueble[K]) => void;
   
+  // 👁️ Visibilidad de herrajes por parámetro de sujeción (inspección de mecanizados DfMA)
+  sujecionesOcultas: Record<string, boolean>;
+  conmutarVisibilidadSujecion: (paramKey: string) => void;
+  limpiarSujecionesOcultas: () => void;
+  
   resultado: ComputoResultado | null;
   cargando: boolean;
   error: string | null;

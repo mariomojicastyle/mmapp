@@ -55,7 +55,8 @@ export function asegurarCadOriginal(obj: THREE.Object3D) {
     }
 
     obj.userData.__cadOrigQuaternion = obj.quaternion ? obj.quaternion.clone() : new THREE.Quaternion();
-    obj.userData.__cadOrigScale = obj.scale ? obj.scale.clone() : new THREE.Vector3(1, 1, 1);
+    const curS = obj.scale;
+    obj.userData.__cadOrigScale = (curS && curS.x > 0.001) ? curS.clone() : new THREE.Vector3(1, 1, 1);
     obj.userData.__cadOrigMatrix = new THREE.Matrix4().compose(
       obj.userData.__cadOrigPosition,
       obj.userData.__cadOrigQuaternion,
@@ -84,7 +85,12 @@ export function restaurarACadOriginal(obj: THREE.Object3D) {
   asegurarCadOriginal(obj);
   obj.position.copy(obj.userData.__cadOrigPosition);
   obj.quaternion.copy(obj.userData.__cadOrigQuaternion);
-  obj.scale.copy(obj.userData.__cadOrigScale);
+  const origScale = obj.userData.__cadOrigScale;
+  if (origScale && origScale.x > 0.001) {
+    obj.scale.copy(origScale);
+  } else {
+    obj.scale.set(1, 1, 1);
+  }
   obj.matrix.copy(obj.userData.__cadOrigMatrix);
   obj.updateMatrix();
   obj.updateMatrixWorld(true);
@@ -226,6 +232,25 @@ export interface HerrajeContactoItem {
 /**
  * Clasifica si un nombre de malla corresponde a un herraje de ensamble.
  */
+/**
+ * Detecta si una malla es una pata, pie, sapata o deslizador de apoyo en suelo.
+ */
+export function isPataOSoporteSuelo(name: string): boolean {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return (
+    n.includes("pata") ||
+    n.includes("pes") ||
+    n.includes("pés") ||
+    n.includes("sapata") ||
+    n.includes("deslizador") ||
+    n.includes("nivelador") ||
+    n.includes("rodizio") ||
+    n.includes("rodízio") ||
+    n.includes("rueda")
+  );
+}
+
 export function isHardwareMeshName(name: string): boolean {
   if (!name) return false;
   const n = name.toLowerCase();

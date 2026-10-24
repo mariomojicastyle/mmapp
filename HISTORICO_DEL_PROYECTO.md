@@ -3761,3 +3761,26 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
   * Todos los daemons activos y actualizados en caliente.
+
+
+---
+
+### 🚀 Hito 285: Precisión Geométrica en Apoyo al Suelo (Paso 02), Blindaje Multitablero en Múltiple Plus, UI Minimalista y Sincronización Bidireccional de Inactivos e Invertir (`CapsulaTableroPlus.tsx`, `CapaMultiplePlusCard.tsx`, `BoardMesh.tsx`, `boardVisibilityRules.ts`, `multiplePlusKinematics.ts`, `manualShowcaseSlice.ts`, `manualMultiplePlusSlice.ts`, `AssemblyPiecePositioner.tsx`, `X-Manual.3bm.json`) (23 de Octubre, 2026)
+- **1. Asentado Exacto de Tableros Rotados al Suelo ($Y = 0.000$) y Compensación de Contenedor/Zócalo (`CapsulaTableroPlus.tsx`)**:
+  * **Soporte de Cotas Z Negativas**: Se eliminó el clamp `Math.max(0, ...)` en el input numérico manual `Z:` y su commit, permitiendo digitar y almacenar valores negativos (ej. `-30`, `-47.6 cm`) sin forzar a cero.
+  * **Compensación de Offset de Contenedor (`calcularOffsetContenedorMueble`)**: Se corrigió el hundimiento de ~7.3 cm bajo el plano de piso provocado por el zócalo del mueble. El botón `[ ⤓ ]` ahora lee `SingleFurnitureInstanceMesh.position.y` (`-minYRotado + alturaZM`), calculando con precisión milimétrica la cota de contacto de la cara inferior sobre la rejilla mundial del suelo ($Y = 0.000$).
+- **2. Discriminación de Ojitos de Herrajes por Simetría Multipar en Zonas de Sujeción (`BoardMesh.tsx`, `boardVisibilityRules.ts`)**:
+  * **Causa Raíz de Ocultamiento Masivo**: Cuando la zona inferior o superior contenía pares del mismo tipo de herraje (ej. 4 tarugos o 4 minifixes), el ojito de una sujeción apagaba los 4 elementos al no distinguir la subdivisión interna.
+  * **Algoritmo de Distancia Simétrica al Centro de Profundidad**: Implementado el cálculo $Z_{mid} = (Z_{min} + Z_{max}) / 2$. El par a mayor distancia $|Z - Z_{mid}|$ se vincula determinísticamente a `Herraje 1` (extremos frontal y trasero), y el par a menor distancia se vincula a `Herraje 2` (internos). Ocultar una sujeción respeta con total fidelidad la otra pareja.
+- **3. Blindaje Multitablero en Posicionador 3D (`AssemblyPiecePositioner.tsx`)**:
+  * **Aislamiento de Herrajes por Tablero Anfitrión**: En capas de Múltiple Plus con más de un tablero simultáneo (`Peça 10`, `Peça 6`, `Peça 7`), el arrastre manual con el cursor 3D ahora utiliza `resolverTableroAnfitrionHerraje` para mover únicamente los herrajes físicamente emparejados a la pieza arrastrada, impidiendo que los herrajes de otros tableros colapsen o sean arrancados de su sitio.
+- **4. Rediseño Minimalista de UI en Múltiple Plus (`CapaMultiplePlusCard.tsx`)**:
+  * **Limpieza de Cabeceras**: Títulos simplificados a `Tableros (N):` y `Herrajes (N):`. Eliminado el campo de búsqueda ("Buscar herraje...") y los botones redundantes de expandir cabecera `[ ⤢ ]`.
+  * **Tiradores Inferiores Minimalistas**: Reemplazadas las cápsulas pesadas con texto ("...PX ARRASTRA PARA ESTIRAR | DOBLE CLIC EXPANDE") por barras minimalistas centradas `w-14 h-1 rounded-full` con interacción fluida de arrastre vertical y doble clic para alternar expandir/compactar todo.
+  * **Restauración y Estandarización de Botón "Posicionar en pieza"**: Restaurado en la cabecera de herrajes en cápsula pura `rounded-full` con colores de acento oficiales Tech Ethos (`#0088AA`) y Obsidian (`#1368AA`).
+- **5. Desbloqueo y Sincronización Bidireccional de la Capa de Inactivos y Botón Invertir (`manualShowcaseSlice.ts`, `manualMultiplePlusSlice.ts`, `multiplePlusKinematics.ts`, `boardVisibilityRules.ts`, `CapaMultiplePlusCard.tsx`, `X-Manual.3bm.json`)**:
+  * **Diagnóstico de Inactividad de Selección**: `ocultarNoAsignadas` estaba bloqueado en `true` en el JSON del paso `P02`, provocando que el motor de cinemática y las reglas de visibilidad forzaran la escala a cero (`scale = [0,0,0]`), pisando incondicionalmente las selecciones de `Modo Cristal` y `Modo Global`.
+  * **Despertar de Three.js**: La conmutación de `Invertir` (`🔄`) ahora incrementa `versionAnimacionManual` y dispara `__3bfDespertarAnimacion()`, sincronizándose reactivamente con el selector de Inactivos (`Ocultos` $\leftrightarrow$ `Modo Cristal` / `Modo Global`).
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Daemons y túnel Cloudflare activos y operativos.

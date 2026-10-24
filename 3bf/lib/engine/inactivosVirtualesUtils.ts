@@ -218,10 +218,12 @@ export function calcularInactivosPaso(
     ...todosLosPasos.flatMap((p) => p.showcase?.gruposCinematicos || []),
   ];
   todosLosGrupos.forEach((g) => {
-    (g.piezas || []).forEach((piez) => {
-      const cleanPiez = piez.toLowerCase().trim();
-      if (cleanPiez) bloquesFuncionalesSet.add(cleanPiez);
-    });
+    if (g.oculto === true) {
+      (g.piezas || []).forEach((piez) => {
+        const cleanPiez = piez.toLowerCase().trim();
+        if (cleanPiez) bloquesFuncionalesSet.add(cleanPiez);
+      });
+    }
   });
 
   // 3. Evaluar cada malla física anotada con instanciaKey física unívoca

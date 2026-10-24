@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { use3BFStore, ObjetoInstancia3BF } from "@/lib/store";
 import { anotarInstanciasFisicas, perteneceAMismaFamiliaPieza, extraerPiezaMadre } from "@/lib/piezaMadreUtils";
-import { isHardwareMeshName, coincidenMismoHerraje } from "@/lib/engine/cadStateUtils";
+import { isHardwareMeshName, coincidenMismoHerraje, isPataOSoporteSuelo } from "@/lib/engine/cadStateUtils";
 import BoardMesh from "./BoardMesh";
 
 export interface SingleFurnitureInstanceMeshProps {
@@ -202,6 +202,7 @@ export function SingleFurnitureInstanceMesh({
     const mallasTableros = mallasCandidatas.filter((m: any) => {
       const n = (m.name || "").toLowerCase();
       const ik = (m.instanciaKey || "").toLowerCase();
+      if (isPataOSoporteSuelo(n) || isPataOSoporteSuelo(ik)) return true;
       return !isHardwareMeshName(n) && !isHardwareMeshName(ik);
     });
 

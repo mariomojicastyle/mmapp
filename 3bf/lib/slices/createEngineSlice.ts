@@ -3,6 +3,9 @@ export interface EngineSlice {
   centrarCamara: () => void;
   parametros: Record<string, any>;
   setParametro: (key: string, value: any) => void;
+  sujecionesOcultas: Record<string, boolean>;
+  conmutarVisibilidadSujecion: (paramKey: string) => void;
+  limpiarSujecionesOcultas: () => void;
   resultado: any;
   cargando: boolean;
   error: string | null;
@@ -58,6 +61,16 @@ export const createEngineSlice = (set: any, get: any): any => ({
     set((state: any) => ({
       parametros: { ...state.parametros, [key]: value },
     })),
+
+  sujecionesOcultas: {},
+  conmutarVisibilidadSujecion: (paramKey: string) =>
+    set((state: any) => ({
+      sujecionesOcultas: {
+        ...(state.sujecionesOcultas || {}),
+        [paramKey]: !state.sujecionesOcultas?.[paramKey],
+      },
+    })),
+  limpiarSujecionesOcultas: () => set({ sujecionesOcultas: {} }),
     
   resultado: null,
   cargando: false,

@@ -61,6 +61,11 @@ export function BoardMesh({
     pestanaActiva,
     herrajesHovered,
     timelineCurrentTime,
+    sujecionesOcultas,
+    parametros,
+    resultado,
+    objetoActivoId,
+    instancias,
   } = use3BFStore();
 
   const meshRef = React.useRef<THREE.Mesh>(null);
@@ -416,6 +421,170 @@ export function BoardMesh({
     esParalelepipedo,
   } = matProps;
 
+  // 👁️ Ocultación selectiva de herrajes por filtro de sujeción (para inspección visual de maquinados DfMA)
+  const estaOcultoPorSujecion = React.useMemo(() => {
+    if (!sujecionesOcultas || Object.keys(sujecionesOcultas).length === 0) return false;
+    // Solo aplica a herrajes (los tableros de madera y maquinados nunca se ocultan por este filtro)
+    if (!isHardware) return false;
+
+    // Obtener parámetros y resultados activos
+    const activeInst = instanciaId ? instancias[instanciaId] : (objetoActivoId ? instancias[objetoActivoId] : null);
+    const paramsEfectivos = activeInst?.parametros || parametros;
+    const resEfectivo = activeInst?.resultado || resultado;
+
+    // Determinar midY para clasificar zona Superior vs Inferior
+    let midY = 0.5;
+    const allMeshes: any[] = resEfectivo?.real_meshes || (resEfectivo as any)?.meshes || [];
+    if (allMeshes.length > 0) {
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const m of allMeshes) {
+        if (m.position && typeof m.position[1] === "number") {
+          if (m.position[1] < minY) minY = m.position[1];
+          if (m.position[1] > maxY) maxY = m.position[1];
+        }
+      }
+      if (minY !== Infinity && maxY !== -Infinity && maxY > minY) {
+        midY = (minY + maxY) / 2;
+      }
+    } else if ((paramsEfectivos as any)?.alto) {
+      midY = (Number((paramsEfectivos as any).alto) / 1000) / 2;
+    }
+
+    const meshY = position ? position[1] : 0;
+    const meshZ = position ? position[2] : 0;
+    const esZonaSuperior = meshY >= midY;
+    const esZonaInferior = meshY < midY;
+
+    // Helper unívoco de familia de herrajes
+    const getFamilia = (str: string) => {
+      const s = (str || "").toLowerCase();
+      if (s.includes("minifix") || s.includes("caja") || s.includes("tambor")) return "minifix";
+      if (s.includes("tarugo") || s.includes("cavilha")) return "tarugo";
+      if (s.includes("tuerca") || s.includes("porca")) return "tuerca";
+      if (s.includes("tornillo") || s.includes("parafuso")) return "tornillo";
+      return s;
+    };
+
+    const meshNameLower = (cleanName || name || "").toLowerCase();
+    const instKeyLower = (instanciaKey || "").toLowerCase();
+
+    for (const [paramKey, estaOculto] of Object.entries(sujecionesOcultas)) {
+      if (!estaOculto) continue;
+
+      const pKeyLow = paramKey.toLowerCase();
+      const esParamSujecion = pKeyLow.includes("sujecion") || pKeyLow.includes("sujeción");
+      if (!esParamSujecion) continue;
+
+      // 1. Filtro espacial (Superior vs Inferior)
+      const esFiltroSuperior = pKeyLow.includes("superior") || pKeyLow.includes("arriba");
+      const esFiltroInferior = pKeyLow.includes("inferior") || pKeyLow.includes("abajo");
+
+      if (esFiltroSuperior && !esZonaSuperior) continue;
+      if (esFiltroInferior && !esZonaInferior) continue;
+
+      // 2. Valor del herraje configurado en este parámetro
+      const limit = resEfectivo?.slider_limits?.[paramKey];
+      const val = String((paramsEfectivos as any)[paramKey] ?? limit?.default ?? "").toLowerCase().trim();
+      if (!val || val === "n/a" || val === "ninguno" || val === "sin herraje") continue;
+
+      // 3. Comparación con la familia del herraje
+      const paramFamilia = getFamilia(val);
+      const meshFamilia = getFamilia(meshNameLower);
+      let coincideFamilia = false;
+      if (paramFamilia === "minifix") {
+        coincideFamilia = meshFamilia === "minifix" || meshNameLower.includes("minifix") || meshNameLower.includes("caja") || meshNameLower.includes("tambor");
+      } else if (paramFamilia === "tarugo") {
+        coincideFamilia = meshFamilia === "tarugo" || meshNameLower.includes("tarugo") || meshNameLower.includes("cavilha");
+      } else if (paramFamilia === "tuerca") {
+        coincideFamilia = meshFamilia === "tuerca" || meshNameLower.includes("tuerca") || meshNameLower.includes("porca");
+      } else if (paramFamilia === "tornillo") {
+        if (val.includes("largo") || val.includes("parafuso largo")) {
+          coincideFamilia = meshNameLower.includes("largo");
+        } else if (val.includes("pt") || val.includes("parafuso pt")) {
+          coincideFamilia = meshNameLower.includes("pt");
+        } else {
+          coincideFamilia = meshFamilia === "tornillo" || meshNameLower.includes("tornillo") || meshNameLower.includes("parafuso");
+        }
+      } else {
+        coincideFamilia = meshNameLower.includes(val) || val.includes(meshNameLower);
+      }
+
+      if (!coincideFamilia) continue;
+
+      // 4. 🎯 Discriminación unívoca por posición (Posición 0: Extremos vs Posición 1: Internos)
+      // Se activa cuando hay múltiples pares de la misma familia en la misma zona (ej. 4 tarugos en inferior)
+      let targetPos: number | null = null;
+      const sliderLimits = resEfectivo?.slider_limits;
+      if (sliderLimits) {
+        const keys = Object.keys(sliderLimits);
+        const idx = keys.indexOf(paramKey);
+        if (idx !== -1) {
+          for (let i = idx + 1; i < Math.min(idx + 4, keys.length); i++) {
+            const kLow = keys[i].toLowerCase();
+            if (kLow.includes("posicion") || kLow.includes("posición")) {
+              const raw = (paramsEfectivos as any)[keys[i]] ?? sliderLimits[keys[i]]?.default;
+              if (raw !== undefined && raw !== null) {
+                const num = Number(raw);
+                if (!isNaN(num)) {
+                  targetPos = num;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (targetPos !== null && allMeshes.length > 0) {
+        const mallasPares = allMeshes.filter((m: any) => {
+          if (!m.position || typeof m.position[1] !== "number" || typeof m.position[2] !== "number") return false;
+          const esSup = m.position[1] >= midY;
+          if (esSup !== esZonaSuperior) return false;
+          const nLow = (m.name || "").toLowerCase();
+          return getFamilia(nLow) === paramFamilia;
+        });
+
+        if (mallasPares.length > 2) {
+          let minZ = Infinity;
+          let maxZ = -Infinity;
+          for (const m of mallasPares) {
+            const z = m.position[2];
+            if (z < minZ) minZ = z;
+            if (z > maxZ) maxZ = z;
+          }
+
+          if (minZ !== Infinity && maxZ !== -Infinity && maxZ > minZ + 0.01) {
+            const midZ = (minZ + maxZ) / 2;
+            const distSet = new Set<number>();
+            for (const m of mallasPares) {
+              distSet.add(Math.round(Math.abs(m.position[2] - midZ) * 1000));
+            }
+            // Ordenar de mayor a menor distancia del punto medio (0: Extremos, 1: Internos)
+            const distinctDistances = Array.from(distSet).sort((a, b) => b - a);
+
+            if (distinctDistances.length > 1) {
+              const currentDist = Math.round(Math.abs(meshZ - midZ) * 1000);
+              const meshRank = distinctDistances.indexOf(currentDist);
+
+              if (meshRank !== -1 && meshRank !== targetPos) {
+                // Esta malla corresponde al otro grupo (ej. Posición 0 vs 1)
+                continue;
+              }
+              if (meshRank === targetPos) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+
+      return true;
+    }
+
+    return false;
+  }, [sujecionesOcultas, isHardware, instanciaId, objetoActivoId, instancias, parametros, resultado, position, cleanName, name, instanciaKey]);
+
   // Prevenir que geometrías milimétricas (clavos, grampas, etc.) dibujen aristas de caja que se perciban como puntos flotantes
   const esMicroGeometria = Boolean(
     size && (
@@ -478,7 +647,7 @@ export function BoardMesh({
 
   // Si está oculta por reglas del paso, subbloque, cinemática o capa: retorno limpio estricto tras invocar todos los hooks
   // 🛡️ REGLA CANÓNICA: Las piezas ocultas NUNCA deben forzarse en escena por hover sobre cápsulas
-  if (!visibilidad.isMeshVisible) {
+  if (!visibilidad.isMeshVisible || estaOcultoPorSujecion) {
     return null;
   }
 
