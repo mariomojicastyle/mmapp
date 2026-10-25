@@ -13,6 +13,7 @@ import AIRenderStudioModal from "@/components/ui/AIRenderStudioModal";
 import PBRMaterialStudioModal from "@/components/ui/PBRMaterialStudioModal";
 import NPanel from "@/components/viewer/NPanel";
 import OptimizadorPanel from "@/components/optimizacion/OptimizadorPanel";
+import { GammaLiveIndicator } from "@/components/viewer/GammaLiveIndicator";
 import { use3BFStore, APP_VERSION } from "@/lib/store";
 import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles, BookOpen, BoxSelect, Scissors } from "lucide-react";
 import { IconModoLineas, IconModoCristal, IconModoSolido, IconModoRender } from "@/components/ui/ControlPanel";
@@ -747,6 +748,7 @@ export default function Home3BF() {
         <div className="flex-1 h-full flex flex-col relative overflow-hidden">
           {/* 🎥 El Visor 3D se mantiene montado para preservar al 100% la cámara, órbita y contexto WebGL al conmutar pestañas */}
           <div className={`w-full h-full relative ${pestanaActiva === "3d" || pestanaActiva === "manual" ? "block" : "hidden"}`}>
+            <GammaLiveIndicator />
             <Viewer3D />
           </div>
           {pestanaActiva === "despiece" && (

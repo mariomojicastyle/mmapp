@@ -96,6 +96,11 @@ export function CapaMultiplePlusCard({
   onPosicionarHerrajesEnPieza,
 }: CapaMultiplePlusCardProps) {
   const conmutarVisibilidadGrupoCinematico = use3BFStore((s: any) => s.conmutarVisibilidadGrupoCinematico);
+  const actualizarCapaPromptPlus = use3BFStore((s: any) => s.actualizarCapaPromptPlus);
+  const toggleMinimizarCapaPromptPlus = use3BFStore((s: any) => s.toggleMinimizarCapaPromptPlus);
+  const limpiarCinematicaCapaPlus = use3BFStore((s: any) => s.limpiarCinematicaCapaPlus);
+  const [copiadoPrompt, setCopiadoPrompt] = useState(false);
+  const [limpiadoCinematica, setLimpiadoCinematica] = useState(false);
 
   const pasoP00 = useMemo(() => {
     return pasosManual.find((p) => p.showcase?.gruposCinematicos && p.showcase.gruposCinematicos.length > 0) || pasosManual[0];
@@ -854,6 +859,121 @@ export function CapaMultiplePlusCard({
                 </div>
               </div>
             </>
+          )}
+        </div>
+      </div>
+
+      {/* ── FILA 6: MEMORIA CINEMÁTICA DEL PASO (PROMPT TÉCNICO REGISTRADO POR GAMMA) ── */}
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+        <div className="p-3 rounded-2xl border border-cyan-400/30 dark:border-cyan-500/30 bg-cyan-500/5 dark:bg-cyan-500/10 transition-all">
+          {/* Encabezado: Título, Botón Circular ? con Tooltip e Instructivo, y Minimizar / Expandir */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10.5px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300">
+                Memoria cinemática del paso
+              </span>
+
+              {/* Botón circular ? con tooltip interactivo */}
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="w-4 h-4 rounded-full border border-cyan-400/60 dark:border-cyan-500/60 bg-white dark:bg-slate-800 text-cyan-700 dark:text-cyan-300 text-[9px] font-black flex items-center justify-center hover:bg-cyan-50 dark:hover:bg-cyan-950 transition shadow-2xs cursor-help"
+                >
+                  ?
+                </button>
+
+                {/* Tooltip flotante en hover */}
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:flex flex-col w-72 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-cyan-400/50 dark:border-cyan-500/50 text-slate-700 dark:text-slate-200 shadow-xl z-50 pointer-events-none text-[9.5px] leading-relaxed">
+                  <span className="font-black text-cyan-700 dark:text-cyan-400 mb-1 flex items-center gap-1">
+                    💡 Memoria Cinemática (Gamma):
+                  </span>
+                  <ol className="list-decimal pl-3.5 space-y-1">
+                    <li>Gamma programa y resuelve directamente la cinemática física precisa en el visor 3D.</li>
+                    <li>El prompt técnico final queda registrado en este campo como memoria y especificación técnica del paso.</li>
+                    <li>Al presionar <strong>Guardar Proyecto</strong>, este prompt queda archivado permanentemente dentro del archivo del mueble.</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => toggleMinimizarCapaPromptPlus?.(paso.id, capa.id)}
+              className="text-[9.5px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer transition"
+            >
+              <span>{capa.promptMinimizado ? "Expandir" : "Minimizar"}</span>
+              <span>{capa.promptMinimizado ? "▼" : "▲"}</span>
+            </button>
+          </div>
+
+          {/* Cuerpo del Prompt */}
+          {!capa.promptMinimizado && (
+            <div className="space-y-2">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                Conversa con Gamma para definir la animación; el prompt técnico final se registra aquí como memoria del paso.
+              </p>
+
+              <div className="relative">
+                <textarea
+                  rows={3}
+                  value={capa.promptCinematico || ""}
+                  onChange={(e) => actualizarCapaPromptPlus?.(paso.id, capa.id, e.target.value)}
+                  onFocus={(e) => {
+                    e.currentTarget.select();
+                  }}
+                  onClick={(e) => {
+                    e.currentTarget.select();
+                  }}
+                  placeholder="Aquí se archiva el prompt técnico que valida la animación de esta capa... Quedará guardado al presionar Guardar Proyecto."
+                  className="w-full text-[11px] p-2.5 rounded-xl border border-cyan-400/40 dark:border-cyan-500/40 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none font-medium transition resize-y custom-scrollbar leading-relaxed min-h-[68px] max-h-[350px] shadow-2xs focus:border-cyan-500 dark:focus:border-cyan-400"
+                />
+              </div>
+
+              {/* Botones de Acción a la derecha en cápsulas puras rounded-full */}
+              <div className="flex items-center justify-end gap-2 pt-0.5">
+                {/* Botón Limpiar Cinemática */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    limpiarCinematicaCapaPlus?.(paso.id, capa.id);
+                    setLimpiadoCinematica(true);
+                    setTimeout(() => setLimpiadoCinematica(false), 2200);
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-[10.5px] font-bold transition cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5 border ${
+                    limpiadoCinematica
+                      ? "bg-rose-600 text-white border-rose-600"
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:border-rose-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50/40 dark:hover:bg-rose-950/20"
+                  }`}
+                  title="Elimina el prompt y restablece la animación de este paso al estado inicial"
+                >
+                  {limpiadoCinematica ? "✓ Cinemática Limpiada" : "Limpiar Cinemática"}
+                </button>
+
+                {/* Botón Copiar Texto */}
+                <button
+                  type="button"
+                  disabled={!capa.promptCinematico?.trim()}
+                  onClick={() => {
+                    const txt = capa.promptCinematico || "";
+                    if (!txt.trim()) return;
+                    if (typeof navigator !== "undefined" && navigator.clipboard) {
+                      navigator.clipboard.writeText(txt);
+                    }
+                    setCopiadoPrompt(true);
+                    setTimeout(() => setCopiadoPrompt(false), 2500);
+                  }}
+                  className={`px-5 py-1.5 rounded-full text-[10.5px] font-black transition cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5 ${
+                    !capa.promptCinematico?.trim()
+                      ? "opacity-50 cursor-not-allowed bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                      : copiadoPrompt
+                      ? "bg-emerald-600 text-white"
+                      : "bg-[#0088AA] dark:bg-[#1368AA] hover:opacity-90 text-white"
+                  }`}
+                >
+                  {copiadoPrompt ? "✓ ¡Copiado!" : "Copiar Texto"}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

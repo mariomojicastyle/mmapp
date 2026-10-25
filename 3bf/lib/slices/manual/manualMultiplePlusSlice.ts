@@ -1134,6 +1134,147 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
+  // 21.1. Actualizar Prompt Cinemático de la Capa
+  actualizarCapaPromptPlus: (pasoId: string, capaId: string, prompt: string) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          capas: (p.multiplePlus.capas || []).map((c: any) => {
+            if (c.id !== capaId) return c;
+            return {
+              ...c,
+              promptCinematico: prompt,
+            };
+          }),
+        },
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 21.2. Alternar Minimizar / Expandir Prompt Cinemático de la Capa
+  toggleMinimizarCapaPromptPlus: (pasoId: string, capaId: string) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          capas: (p.multiplePlus.capas || []).map((c: any) => {
+            if (c.id !== capaId) return c;
+            return {
+              ...c,
+              promptMinimizado: !Boolean(c.promptMinimizado),
+            };
+          }),
+        },
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 21.3. Aplicar Cinemática Calculada por Copilot AI
+  aplicarCinematicaCopilot: (
+    pasoId: string,
+    capaId: string,
+    data: {
+      duracionAudioSegundos?: number;
+      duracionTotal?: number;
+      velocidadHerrajesCmS?: number;
+      capaActualizada: any;
+      volteoIntermedio?: any;
+    }
+  ) => {
+    const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const mpActual = p.multiplePlus || { capas: [] };
+      const capasExistentes = mpActual.capas || [];
+      const coincideAlguna = capasExistentes.some((c: any) => c.id === capaId);
+      const nuevasCapas = capasExistentes.map((c: any, idx: number) => {
+        const esMatch = coincideAlguna ? c.id === capaId : idx === 0;
+        return esMatch ? { ...c, ...data.capaActualizada, id: c.id } : c;
+      });
+
+      return {
+        ...p,
+        duracionTotal: (data as any).duracionTotal ?? data.duracionAudioSegundos ?? p.duracionTotal ?? 20,
+        duracionAudioSegundos: (data as any).duracionTotal ?? data.duracionAudioSegundos ?? p.duracionAudioSegundos ?? 20,
+        multiplePlus: {
+          ...mpActual,
+          velocidadHerrajesCmS: data.velocidadHerrajesCmS ?? mpActual.velocidadHerrajesCmS ?? 25,
+          volteoIntermedio: data.volteoIntermedio ?? mpActual.volteoIntermedio,
+          capas: nuevasCapas,
+        },
+      };
+    });
+
+    set({
+      pasosManual: actualizados,
+      versionAnimacionManual: (state.versionAnimacionManual || 0) + 1,
+    });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 21.4. Limpiar Cinemática y Restablecer a Estado Original
+  limpiarCinematicaCapaPlus: (pasoId: string, capaId: string) => {
+    const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const mpActual = p.multiplePlus || { capas: [] };
+      const capasExistentes = mpActual.capas || [];
+      const coincideAlguna = capasExistentes.some((c: any) => c.id === capaId);
+
+      const nuevasCapas = capasExistentes.map((c: any, idx: number) => {
+        const esMatch = coincideAlguna ? c.id === capaId : idx === 0;
+        if (!esMatch) return c;
+
+        // Restablecer herrajes a estado inicial limpio
+        const herrajesOriginales = (c.herrajes || []).map((h: any) => ({
+          ...h,
+          tiempoAparicion: 0,
+          ejeAproximacion: "-X",
+          desplazamientoCm: undefined,
+          escalaInicial: 1.0,
+          duracionEscalaSegundos: 1.0,
+        }));
+
+        return {
+          ...c,
+          promptCinematico: "",
+          herrajes: herrajesOriginales,
+        };
+      });
+
+      return {
+        ...p,
+        duracionAudioSegundos: 10,
+        multiplePlus: {
+          ...mpActual,
+          volteoIntermedio: { activo: false },
+          capas: nuevasCapas,
+        },
+      };
+    });
+
+    set({
+      pasosManual: actualizados,
+      versionAnimacionManual: (state.versionAnimacionManual || 0) + 1,
+    });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
   // 22. Colapsar o Expandir todas las capas
   setColapsarTodasCapasPlus: (pasoId: string, colapsadas: boolean) => {
     const state = get();

@@ -1084,7 +1084,7 @@ function SelectionController() {
 
       const state = use3BFStore.getState();
 
-      if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+      if (state.modoPickingManual.activo) {
 
         return;
 
@@ -1136,9 +1136,14 @@ function SelectionController() {
 
           if (targetInstId && state.instancias[targetInstId]) {
 
-            seleccionarInstancia(targetInstId);
+            if (state.objetoActivoId === targetInstId) {
+              seleccionarInstancia(null);
+              setObjetoSeleccionado(false);
+            } else {
+              seleccionarInstancia(targetInstId);
+              setObjetoSeleccionado(true);
+            }
 
-            setObjetoSeleccionado(true);
 
           } else {
 
@@ -1184,7 +1189,7 @@ function SelectionController() {
 
       const state = use3BFStore.getState();
 
-      if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+      if (state.modoPickingManual.activo) {
 
         return;
 
@@ -3463,6 +3468,10 @@ export default function Viewer3D() {
           state.setObjetoSeleccionado(false);
 
           state.seleccionarInstancia(null);
+
+          if (state.modoPickingManual?.activo) {
+            state.limpiarPickingManual?.();
+          }
 
           if (typeof window !== "undefined") {
 

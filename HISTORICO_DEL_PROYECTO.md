@@ -3784,3 +3784,27 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
   * Daemons y túnel Cloudflare activos y operativos.
+
+
+---
+
+### 🚀 Hito 286: Coreografía Secuencial Pareada Correderas ➔ Tornillos (Paso P02), Deselección en Manual 3D y Blindaje Anti-Bloqueo de Gamma (`GammaLiveIndicator.tsx`, `Viewer3D.tsx`, `createSceneInstanceSlice.ts`, `multiplePlusKinematics.ts`, `X-Manual.3bm.json`, `WORKER.md`) (24 de Octubre, 2026)
+- **1. Coreografía Secuencial Pareada Correderas ➔ Tornillos Inmediatos (Paso P02 / Peça 7)**:
+  * **Principio de Taller Inmutable (Erradicación del Desorden)**: Ningún tornillo puede flotar en el aire sobre un hueco vacío. Cada corredera que desciende y se apoya sobre el tablero de madera recibe de inmediato sus dos tornillos correspondientes para quedar fijada antes de dar paso a la siguiente corredera.
+  * **Chapeo y Descenso Escalonado a 30 cm**: Se redujo la distancia de aproximación de 60 cm a 30 cm exactos (`desplazamientoCm: 30`) para todas las correderas y tornillos a petición del usuario.
+  * **Efecto de Zoom/Escala en Tornillos (200% ➔ 100% en 1.0s)**: Los tornillos aparecen a escala ampliada de 2.0x (`escalaInicial: 2.0`) y escalan suavemente al 100% en 1.0s (`duracionEscalaSegundos: 1.0`) mientras descienden a fijar la corredera en sus barrenos.
+  * **Secuencia Temporal Pareada (16.0s Total)**:
+    - *Ensamble 1 (Frente)*: `Corrediça - Fixa (1)` desciende a los 0.5s y se apoya a los 1.5s ➔ sus 2 tornillos `Parafuso E (38)` y `Parafuso E (69)` descienden a los 2.0s y se fijan a los 3.5s.
+    - *Ensamble 2 (Centro)*: `Corrediça - Fixa (5)` desciende a los 5.0s y se apoya a los 6.0s ➔ sus 2 tornillos `Parafuso E (31)` y `Parafuso E (65)` descienden a los 6.5s y se fijan a los 8.0s.
+    - *Ensamble 3 (Fondo)*: `Corrediça - Fixa (9)` desciende a los 9.5s y se apoya a los 10.5s ➔ sus 2 tornillos `Parafuso E (61)` y `Parafuso E (25)` descienden a los 11.0s y se fijan a los 12.5s.
+    - *Estabilidad y Cierre*: Segundos 13.0s a 16.0s con el lateral izquierdo completamente ensamblado.
+- **2. Deselección Flexible en Modo Manual 3D (`Viewer3D.tsx`, `createSceneInstanceSlice.ts`)**:
+  * **Erradicación del Bloqueo en Pestaña Manual**: Se removió la condición restrictiva `state.pestanaActiva === "manual"` que impedía deseleccionar piezas en el visor 3D del manual.
+  * **Interacción Idéntica al Visor General**: Clic en el vacío deselecciona la pieza activa y limpia el outline; clic izquierdo sobre una pieza previamente seleccionada togglea su deselección.
+- **3. Blindaje Anti-Bloqueo del Modal de Gamma (`GammaLiveIndicator.tsx`, `route.ts`)**:
+  * **Control de Cierre Manual y Auto-Dismiss Rápido**: Integrado botón `✕` en cápsula circular en la esquina superior derecha del modal. Auto-cierre acelerado a 1.2 segundos tras aplicar la cinemática exitosa y timeout forzado de seguridad a los 3.5 segundos.
+  * **Blindaje de Archivo Abierto**: El modal verifica la existencia de modelo y pasos de manual antes de abrirse para no quedar colgado en segundo plano.
+  * **Limpieza de Backend en API**: Endpoint `/api/gamma-status` limpia el payload inmediatamente tras el consumo por el visor.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Daemons de RhinoCompute, Worker Python, Next.js y Cloudflare Tunnel 100% operativos.

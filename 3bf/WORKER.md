@@ -411,3 +411,51 @@ Para mantener máxima velocidad de lectura, bajo consumo de tokens y separación
      - La cantidad física de tableros de cada familia es estrictamente $\text{Cantidad} = \max(\text{Caras A completas}, \text{Caras B completas})$.
 5. **`dxf_exporter.py` (Motor CAM & Exportación DXF Biesse CIX):**
    * `procesar_mecanizado_intercomponentes` y `generar_dxf_biesse`.
+
+---
+
+## 🔍 15. Detección Canónica de Herrajes por Contacto Físico y Proximidad 3D (Box3 Proximity Scanning)
+
+Para erradicar definitivamente la ambigüedad en la identificación y asignación de herrajes (correderas, tornillos y tarugos) a sus respectivas piezas de madera:
+
+### 1. La Trampa de los Índices de Árbol de Grasshopper (DataTree Trap)
+En Grasshopper, los sufijos numéricos entre paréntesis como Corrediça - Fixa (1), Parafuso E (61), Cavilha (77) se generan según el recorrido paramétrico de ramas de árboles de datos (DataTree). **Dichos números NO representan contigüidad espacial, posición en banco de trabajo ni pertenencia a la misma pieza**. Asumir que (1), (2), (3) pertenecen al mismo tablero provocaba que los herrajes saltaran erráticamente entre piezas durante la animación.
+
+### 2. Algoritmo de Detección por Contacto Físico (THREE.Box3)
+La única fuente de verdad física irrefutable es la **geometría 3D en el espacio de reposo (RestWorld)**:
+1. **Caja Envolvente del Tablero (Box3):** Se calcula oxPieza = new THREE.Box3().setFromObject(meshPieza).
+2. **Distancia Euclidiana Punto-Caja:** Para cada herraje candidato en la escena Three.js, se evalúa su posición en reposo en coordenadas de mundo pHwRestWorld:
+   \text{distancia} = \text{boxPieza.distanceToPoint}(pHwRestWorld)
+3. **Filtro de Contacto Directo:** Todo herraje con $\text{distancia} \le 0.05\text{ cm}$ entra en contacto físico real con el tablero.
+4. **Asignación Sub-Herraje (Tornillos a Correderas):** De forma análoga, para asociar los tornillos (Parafuso E) a su corredera correspondiente, se calcula la distancia entre cada tornillo y la caja de cada corredera (oxSlide.distanceToPoint(pScrew)). Cada corredera tiene exactamente 2 tornillos con distancia prácticamente nula ($\approx 0\text{ mm}$) que corresponden a sus barrenos de sujeción.
+5. **Ordenación Espacial en Cascada:** Las correderas y tornillos de una pieza se ordenan por su coordenada longitudinal $ (de la más alejada a la más cercana a la cámara / frente del mueble) para disparar la animación en cascada natural de taller.
+
+### 3. Mapeo Físico Verificado — Cómoda Ravenna (Paso P02)
+* **Peça 7 (Lateral Izquierdo en Banco):**
+  * Correderas: Corrediça - Fixa (9) (Fondo/Atrás), Corrediça - Fixa (5) (Centro/Medio), Corrediça - Fixa (1) (Frente/Adelante).
+  * Tornillos: 6 unidades Parafuso E (2 por corredera: [61, 25] para fija 9, [31, 65] para fija 5, [38, 69] para fija 1).
+  * Tarugos: 2 unidades Cavilha (77) y Cavilha (51).
+* **Peça 6 (Divisor Central en Banco):**
+  * Correderas: 6 unidades en total: Cara A Corrediça - Fixa (11, 7, 3) y Cara B Corrediça - Fixa (10, 6, 2).
+  * Tornillos: 12 unidades Parafuso E.
+  * Tarugos: 4 unidades Cavilha (48, 81, 45, 82).
+* **Peça 10 (Lateral Derecho en Banco):**
+  * Correderas: Corrediça - Fixa (12, 8, 4) (Fondo, Medio, Frente).
+  * Tornillos: 6 unidades Parafuso E (64, 68, 34, 43, 48, 72).
+  * Tarugos: 2 unidades Cavilha (78) y Cavilha (52).
+
+
+### 15.2. Coreografía Secuencial Pareada Correderas ➔ Tornillos (Paso P02 / Peça 7)
+* **Principio de Taller Inmutable:** Ningún tornillo puede flotar en el aire sobre un hueco vacío. Cada corredera que desciende y se apoya sobre el tablero de madera debe recibir inmediatamente sus dos tornillos correspondientes para quedar fijada antes de dar paso a la siguiente corredera.
+* **Mapa de Tiempos y Cotas (16.0s / 30 cm / 200% escala inicial):**
+  1. **Ensamble 1 — Frente (`Corrediça - Fixa (1)`):**
+     * Desciende a los `0.5s` desde `+Y 30cm` y se apoya a los `1.5s` en la madera.
+     * Tornillos `Parafuso E (38)` y `Parafuso E (69)` aparecen a los `2.0s` arriba a `+Y 30cm` al `200%` de escala, escalan a `100%` en 1.0s y descienden a fijar la corredera en sus 2 barrenos.
+  2. **Ensamble 2 — Centro (`Corrediça - Fixa (5)`):**
+     * Desciende a los `5.0s` desde `+Y 30cm` y se apoya a los `6.0s` en la madera.
+     * Tornillos `Parafuso E (31)` y `Parafuso E (65)` aparecen a los `6.5s` al `200%` y descienden a fijar la corredera en sus 2 barrenos.
+  3. **Ensamble 3 — Fondo (`Corrediça - Fixa (9)`):**
+     * Desciende a los `9.5s` desde `+Y 30cm` y se apoya a los `10.5s` en la madera.
+     * Tornillos `Parafuso E (61)` y `Parafuso E (25)` aparecen a los `11.0s` al `200%` y descienden a fijar la corredera en sus 2 barrenos.
+  4. **Estabilidad y Cierre (13.0s a 16.0s):**
+     * Pieza 7 totalmente ensamblada con sus 3 correderas y 6 tornillos estables en su posición final.

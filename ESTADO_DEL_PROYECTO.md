@@ -9,7 +9,19 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 285 completado con éxito total. **Precisión Geométrica en Apoyo al Suelo (Paso 02), Blindaje Multitablero en Múltiple Plus, UI Minimalista y Sincronización Bidireccional de Inactivos e Invertir**. Siguiente foco: Consolidación y pruebas de cinemática de ensamblaje en Paso 02. Rama activa: `3BF_P02`.
+**Estado:** Hito 286 completado con éxito total. **Coreografía Secuencial Pareada Correderas ➔ Tornillos (Paso P02), Deselección en Manual 3D y Blindaje Anti-Bloqueo de Gamma**. Siguiente foco: Continuar afinando la animación cinemática con Gamma en los siguientes pasos del manual. Rama activa: `3BF_Seguir_Afinando_Gamma_Nimacion`.
+
+- [x] **[24 de Octubre, 2026] Hito 286: Coreografía Secuencial Pareada Correderas ➔ Tornillos (Paso P02), Deselección en Manual 3D y Blindaje Anti-Bloqueo de Gamma (`GammaLiveIndicator.tsx`, `Viewer3D.tsx`, `createSceneInstanceSlice.ts`, `multiplePlusKinematics.ts`, `X-Manual.3bm.json`, `WORKER.md`)**:
+  * **Coreografía Secuencial Pareada (Corredera ➔ 2 Tornillos Inmediatos)**: Erradicado el desorden de animación donde tornillos del fondo flotaban sobre el vacío antes de posarse su corredera. Ahora la primera corredera que se apoya en la madera recibe de inmediato sus 2 tornillos:
+    - **Grupo 1 (Frente)**: `Corrediça - Fixa (1)` desciende a los `0.5s` y se apoya a los `1.5s` ➔ sus 2 tornillos `Parafuso E (38)` y `Parafuso E (69)` descienden a los `2.0s` a fijarla.
+    - **Grupo 2 (Centro)**: `Corrediça - Fixa (5)` desciende a los `5.0s` y se apoya a los `6.0s` ➔ sus 2 tornillos `Parafuso E (31)` y `Parafuso E (65)` descienden a los `6.5s` a fijarla.
+    - **Grupo 3 (Fondo)**: `Corrediça - Fixa (9)` desciende a los `9.5s` y se apoya a los `10.5s` ➔ sus 2 tornillos `Parafuso E (61)` y `Parafuso E (25)` descienden a los `11.0s` a fijarla.
+  * **Cota de Aproximación Reducida a 30 cm**: Reducción de los 60 cm previos a 30 cm exactos (`desplazamientoCm: 30`) para todas las correderas y tornillos.
+  * **Efecto de Zoom/Escala en Tornillos (200% ➔ 100% en 1s)**: Tornillos aparecen al 200% (`escalaInicial: 2.0`) y escalan suavemente al 100% en 1.0s (`duracionEscalaSegundos: 1.0`) mientras descienden a su barreno.
+  * **Control de Duración Total de Línea de Tiempo (16.0s)**: Sincronización exacta en reproductor y audio.
+  * **Deselección en Manual 3D**: Removido bloqueo en `Viewer3D.tsx` y `createSceneInstanceSlice.ts`; clic en el vacío deselecciona y clic en pieza seleccionada togglea deselección.
+  * **Blindaje Anti-Bloqueo del Modal de Gamma**: Botón `✕` de cierre manual en cápsula circular, auto-cierre en 1.2s, timeout de seguridad de 3.5s y verificación de archivo/manual abierto.
+  * **Validación de Calidad**: `npx tsc --noEmit` en `3bf` con **0 errores**.
 
 - [x] **[23 de Octubre, 2026] Hito 285: Precisión Geométrica en Apoyo al Suelo (Paso 02), Blindaje Multitablero en Múltiple Plus, UI Minimalista y Sincronización Bidireccional de Inactivos e Invertir (`CapsulaTableroPlus.tsx`, `CapaMultiplePlusCard.tsx`, `BoardMesh.tsx`, `boardVisibilityRules.ts`, `multiplePlusKinematics.ts`, `manualShowcaseSlice.ts`, `manualMultiplePlusSlice.ts`, `AssemblyPiecePositioner.tsx`, `X-Manual.3bm.json`)**:
   * **Asentado Exacto de Tableros Rotados al Suelo ($Y = 0.000$) y Compensación de Contenedor/Zócalo (`CapsulaTableroPlus.tsx`)**: Soporte de cotas Z negativas sin forzar a cero, y función `calcularOffsetContenedorMueble` para compensar el offset Y de `SingleFurnitureInstanceMesh` (`-minYRotado + alturaZM`, ~7.3 cm de zócalo), posando la cara inferior del tablero de forma enrasada y matemática sobre el plano del suelo.

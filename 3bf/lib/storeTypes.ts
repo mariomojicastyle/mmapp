@@ -530,6 +530,11 @@ export interface HerrajeCapaPlus {
   tiempoAparicion: number; // Segundo exacto en que aparece (defecto 0)
   congelado?: boolean;
   destello?: HerrajeDestelloConfig;
+  desplazamientoCm?: number; // Cota de aproximación individual (ej. 60 cm)
+  escalaInicial?: number; // Escala inicial de aparición (ej. 2.0 = 200%)
+  duracionEscalaSegundos?: number; // Tiempo en reescalar a 100% (defecto 1.0s)
+  tableroAnfitrionId?: string; // Nombre o ID del tablero anfitrión físico (ej. "Peça 7", "Peça 6", "Peça 10")
+  posRestWorld?: [number, number, number]; // Posición 3D en reposo para ordenar de alejada a cercana a la cámara
 }
 
 export interface OffsetBancoCm {
@@ -553,6 +558,8 @@ export interface CapaMultiplePlus {
   offsetBancoCm?: OffsetBancoCm;
   tiempoAcopleSegundos?: number;
   duracionAcopleSegundos?: number;
+  promptCinematico?: string;
+  promptMinimizado?: boolean;
   orientacionBanco?: {
     rotacion: [number, number, number];
     apoyoEnPiso: boolean;

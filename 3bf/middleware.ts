@@ -30,6 +30,9 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/tts") ||
     pathname.startsWith("/api/translate") ||
+    pathname.startsWith("/api/kinematics") ||
+    pathname.startsWith("/api/gamma-status") ||
+    pathname.startsWith("/api/gamma-report") ||
     pathname.startsWith("/api/ar-model") ||
     pathname.startsWith("/api/bloques") ||
     pathname.startsWith("/api/compute") ||

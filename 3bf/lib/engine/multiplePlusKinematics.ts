@@ -1008,8 +1008,16 @@ export function compilarMultiplePlusPaso(
             scales.push(0, 0, 0);
           }
 
+          const sIni = herraje.escalaInicial ?? 1;
           times.push(tVisible);
-          scales.push(1, 1, 1);
+          scales.push(sIni, sIni, sIni);
+
+          if (sIni !== 1) {
+            const durEscala = herraje.duracionEscalaSegundos ?? 1.0;
+            const tScaleEnd = Math.min(duracionPaso, tVisible + durEscala);
+            times.push(tScaleEnd);
+            scales.push(1, 1, 1);
+          }
 
           if (times[times.length - 1] < duracionPaso) {
             times.push(duracionPaso);
@@ -1053,10 +1061,13 @@ export function compilarMultiplePlusPaso(
         } else {
           // 🚀 Herraje nuevo: inserción colineal desde Punto A hasta Punto B (barreno)
           const eje = herraje.ejeAproximacion || "-X";
-          const vDirOffsetBase = resolverVectorEje(eje, distGlobalM);
+          const distHwM = (typeof herraje.desplazamientoCm === "number" && herraje.desplazamientoCm > 0)
+            ? herraje.desplazamientoCm / 100
+            : distGlobalM;
+          const vDirOffsetBase = resolverVectorEje(eje, distHwM);
 
-          const tViaje = distGlobalM > 0.001
-            ? Math.max(0.15, distGlobalM / velocidadHerrajesM_s)
+          const tViaje = distHwM > 0.001
+            ? Math.max(0.15, distHwM / velocidadHerrajesM_s)
             : 0;
           const tHwStart = tAparicion;
           tHwStartCalc = tHwStart;
@@ -1067,7 +1078,7 @@ export function compilarMultiplePlusPaso(
 
           // Sub-muestreo durante la inserción si tiene distancia
           const insertionTimes: number[] = [tHwStart, tHwLlegada];
-          if (tHwLlegada > tHwStart && distGlobalM > 0.005) {
+          if (tHwLlegada > tHwStart && distHwM > 0.005) {
             const nIns = Math.max(5, Math.ceil((tHwLlegada - tHwStart) / 0.05));
             for (let i = 1; i < nIns; i++) {
               insertionTimes.push(tHwStart + (i / nIns) * (tHwLlegada - tHwStart));
@@ -1088,7 +1099,11 @@ export function compilarMultiplePlusPaso(
               tRotStartTab,
               tLlegadaTab
             );
-            const vDirRot = tieneRotHw ? vDirOffsetBase.clone().applyMatrix4(matCurGiro) : vDirOffsetBase;
+            // 📐 REGLA CANÓNICA: La cota vertical de altura (+Y / -Y) es perpendicular al banco de trabajo / suelo.
+            // Si el eje es +Y (altura vertical de arriba hacia abajo), vDirOffsetBase es absoluto al banco y no se distorsiona horizontalmente.
+            const vDirRot = (eje === "+Y" || eje === "-Y")
+              ? vDirOffsetBase
+              : (tieneRotHw ? vDirOffsetBase.clone().applyMatrix4(matCurGiro) : vDirOffsetBase);
 
             if (time <= tHwStart) {
               const pAprox = pBarreno.clone().add(vDirRot);
