@@ -108,6 +108,31 @@ export async function POST(req: Request) {
           if (mesh && nodeName) {
             mesh.setName(nodeName);
           }
+          // 🛡️ Blindaje Universal Permanente: purgar de extras cualquier objeto o string base64 pesado
+          const extras = node.getExtras() as any;
+          if (extras) {
+            const cleanExtras: any = {};
+            for (const [k, v] of Object.entries(extras)) {
+              if (typeof v === "string" && v.length > 256) continue;
+              if (["materialPBR", "pbrDiffuse", "pbrMaps", "canvas", "blob", "geometryBackup"].includes(k)) continue;
+              cleanExtras[k] = v;
+            }
+            node.setExtras(cleanExtras);
+          }
+        }
+
+        // 🛡️ Blindaje Universal en materiales glTF
+        for (const mat of doc.getRoot().listMaterials()) {
+          const extras = mat.getExtras() as any;
+          if (extras) {
+            const cleanExtras: any = {};
+            for (const [k, v] of Object.entries(extras)) {
+              if (typeof v === "string" && v.length > 256) continue;
+              if (["materialPBR", "pbrDiffuse", "pbrMaps"].includes(k)) continue;
+              cleanExtras[k] = v;
+            }
+            mat.setExtras(cleanExtras);
+          }
         }
 
         const transformSteps: any[] = [];

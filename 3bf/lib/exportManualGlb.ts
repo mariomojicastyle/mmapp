@@ -468,6 +468,54 @@ export function resolverMaterialPbrMesh(
  * (512px / 256px JPEG, deduplicación de geometrías y materiales, sin planos/aristas y compresión Draco).
  * Motor unificado oficial para Descarga GLB de escritorio y Realidad Aumentada (AR).
  */
+/**
+ * 🛡️ BLINDAJE DEFINITIVO ANTI-FUGAS (Defense in Depth):
+ * Recorre recursivamente cualquier árbol Three.js antes de ser exportado a glTF y
+ * purga cualquier dato pesado, string base64 (>256 caracteres), textura o buffer
+ * almacenado en userData, evitando que el JSON de glTF crezca sin control.
+ */
+export function sanitizarArbolExportacion(root: THREE.Object3D) {
+  root.traverse((node) => {
+    if (!node.userData) return;
+    const cleanUserData: Record<string, any> = {};
+    for (const [key, val] of Object.entries(node.userData)) {
+      if (
+        key === "materialPBR" ||
+        key === "pbrDiffuse" ||
+        key === "pbrMaps" ||
+        key === "canvas" ||
+        key === "blob" ||
+        key === "geometryBackup" ||
+        key === "__rawCadData"
+      ) {
+        continue;
+      }
+      if (typeof val === "string" && val.length > 256) {
+        continue;
+      }
+      if (typeof val === "object" && val !== null) {
+        if (
+          (val as any).isVector3 ||
+          (val as any).isVector2 ||
+          (val as any).isQuaternion ||
+          (val as any).isMatrix4 ||
+          (val as any).isEuler ||
+          (val as any).isColor
+        ) {
+          cleanUserData[key] = val;
+        } else if (Array.isArray(val) && val.length <= 32) {
+          cleanUserData[key] = val;
+        }
+        continue;
+      }
+      if (typeof val === "number" || typeof val === "boolean" || typeof val === "string") {
+        cleanUserData[key] = val;
+      }
+    }
+    node.userData = cleanUserData;
+  });
+}
+
 export async function exportarGlbMuebleCompleto(
   scene: THREE.Object3D,
   options?: {
@@ -559,6 +607,9 @@ export async function exportarGlbMuebleCompleto(
   cameraNode.updateMatrix();
   cameraNode.updateMatrixWorld(true);
   exportScene.add(cameraNode);
+
+  // 3.5. Blindaje universal: Sanitizar metadatos antes de serializar
+  sanitizarArbolExportacion(exportScene);
 
   // 4. Parsear a binario glTF 2.0 nativo
   const rawBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
@@ -738,6 +789,7 @@ export async function exportarGlbPasoManual(
     const bloqueClip = new THREE.AnimationClip("default", duracion, bloqueTracks);
 
     // Parsear con GLTFExporter
+    sanitizarArbolExportacion(exportBloqueScene);
     const rawBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
       exporter.parse(
         exportBloqueScene,
@@ -934,6 +986,11 @@ export async function exportarGlbPasoManual(
       )
     );
 
+    // 🛡️ REGLA CRÍTICA: Si la pieza NO es activa del paso NI es heredada, descartar de raíz
+    if (!esActivaDelPaso && !esHeredada) {
+      return;
+    }
+
     // Si es una pieza heredada pero el usuario configuró modoHeredados === "oculto", se omite
     if (esHeredada && modoHeredados === "oculto") {
       return;
@@ -962,8 +1019,16 @@ export async function exportarGlbPasoManual(
     const invSceneMatrix = scene.matrixWorld.clone().invert();
     exportMesh.applyMatrix4(invSceneMatrix);
 
+    // 🛡️ REGLA SUPREMA: NUNCA propagar 'materialPBR' ni objetos de textura con data-uri en userData,
+    // ya que GLTFExporter los serializa como texto plano en 'node.extras', disparando el JSON del GLB a >400 MB.
     exportMesh.userData = {
-      ...mesh.userData,
+      instanciaKey: mesh.userData?.instanciaKey,
+      cleanName: mesh.userData?.cleanName || mesh.name,
+      piezaMadre: mesh.userData?.piezaMadre,
+      isHardware: mesh.userData?.isHardware,
+      isWoodBoard: mesh.userData?.isWoodBoard,
+      esHeredada,
+      esCristalHeredado,
       initialPosition: exportMesh.position.clone(),
       __cadOrigPosition: exportMesh.position.clone(),
       __cadOrigQuaternion: exportMesh.quaternion.clone(),
@@ -974,13 +1039,6 @@ export async function exportarGlbPasoManual(
       __baseRestScale: exportMesh.scale.clone(),
       __bancoPosition: exportMesh.position.clone(),
       __bancoQuaternion: exportMesh.quaternion.clone(),
-      instanciaKey: mesh.userData?.instanciaKey,
-      cleanName: mesh.userData?.cleanName || mesh.name,
-      piezaMadre: mesh.userData?.piezaMadre,
-      isHardware: mesh.userData?.isHardware,
-      isWoodBoard: mesh.userData?.isWoodBoard,
-      esHeredada,
-      esCristalHeredado,
     };
 
     furnitureRoot.add(exportMesh);
@@ -1145,6 +1203,9 @@ export async function exportarGlbPasoManual(
     cameraNode.updateMatrixWorld(true);
     exportScene.add(cameraNode);
   }
+
+  // 6.9. Blindaje universal: Sanitizar metadatos antes de serializar
+  sanitizarArbolExportacion(exportScene);
 
   // 7. Parsear a binario glTF estándar universal glTF 2.0 (compatible al 100% con Windows 3D Viewer, Babylon Sandbox, Blender)
   const rawBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {

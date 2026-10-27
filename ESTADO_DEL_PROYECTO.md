@@ -5,11 +5,22 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 > **Contacto Oficial Mario Mojica:** WhatsApp: **`+57 311 764 6907`** (3117646907) | Email: **`mariomojica.style@gmail.com`** | Portafolio: **`https://portfolio.mariomojica.com/es`** | Demo: **`https://mariomojica.com/demo`**
 > 
 > 🏷️ **REGLA GLOBAL DE NOMENCLATURA DE MARCA:** La suite y motor paramétrico se escribe **SIEMPRE Y SIN EXCEPCIÓN** como **`3dBimFab`** (d minúscula, B mayúscula, F mayúscula: `3` + `d` + `Bim` + `Fab`). Prohibido escribir *3D Binfab*, *3DBimFab*, *3D BIM FAB*, *3D BinFab*, etc.
+>
+> 👁️ **RADAR Y VIGILANCIA TECNOLÓGICA DIARIA: `Bygga` (Hassan El Mghari / @nutlope):** Rastreo permanente activado. Si Mario pregunta *"¿ya liberaron Bygga / viga?"*, consultar [VIGILANCIA_BYGGA.md](file:///c:/Desarrollo/mmapp/docs/VIGILANCIA_BYGGA.md) y verificar `https://github.com/nutlope`. Estado actual: **NO liberado (Demo / Coming Soon)**.
 
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 286 completado con éxito total. **Coreografía Secuencial Pareada Correderas ➔ Tornillos (Paso P02), Deselección en Manual 3D y Blindaje Anti-Bloqueo de Gamma**. Siguiente foco: Continuar afinando la animación cinemática con Gamma en los siguientes pasos del manual. Rama activa: `3BF_Seguir_Afinando_Gamma_Nimacion`.
+**Estado:** Hito 288 completado con éxito total. **Actualización de Edge TTS a v2.1.1 en Ecosistema B2B, Resolución de Bloqueo 403/200 y Blindaje Definitivo de Exportación GLB (< 1.5 MB)**. Siguiente foco: Continuar afinando la animación cinemática con Gamma en los siguientes pasos del manual y verificación en producción. Rama activa: `Ajuste_TTS`.
+
+- [x] **[27 de Octubre, 2026] Hito 288: Actualización de Edge TTS a v2.1.1 en Ecosistema B2B, Resolución de Bloqueo 403/200 y Blindaje Definitivo de Exportación GLB (< 1.5 MB) (`exportManualGlb.ts`, `compress-glb/route.ts`, `mario-mojica-plataforma/package.json`, `3bf/package.json`)**:
+  * **Actualización Crítica de Microsoft Edge TTS (v2.1.1)**: Microsoft actualizó a nivel mundial su protocolo de autenticación e intercambio de tokens (`Sec-MS-GEC`) para Edge TTS, bloqueando las versiones anteriores con error 403 / 200 WebSocket. Se actualizó a `msedge-tts@2.1.1` tanto en la Plataforma B2B (`mario-mojica-plataforma`) como en `3bf`, restaurando la síntesis neural de voz en español, portugués e inglés con soporte de pausas.
+  * **Diagnóstico y Erradicación Definitiva de GLBs Monstruosos (>400 MB ➔ 1.5 MB)**:
+    - *Causa raíz*: El bloque binario y Draco pesaban solo 1.41 MB, pero el texto JSON (`Chunk 0`) alcanzaba **443 MB** debido a que `...mesh.userData` inyectaba `materialPBR` con cadenas `data:image/png;base64` de 5.8 MB por pieza, serializadas por `GLTFExporter` en `node.extras`.
+    - *Corte de piezas inactivas*: Si una pieza no es activa del paso ni es heredada, se omite de raíz en `exportarGlbPasoManual`.
+    - *Sanitizador universal (`sanitizarArbolExportacion`)*: Función interceptora previa a `GLTFExporter.parse` que purga de `userData` cualquier string mayor a 256 caracteres, texturas y referencias pesadas.
+    - *Guardián defensivo en backend (`/api/compress-glb`)*: El transformador `@gltf-transform` recorre todos los nodos y materiales depurando `extras`, asegurando un GLB final ultra-ligero de **~1.5 MB** (reducción del 99.7%).
+  * **Validación de Calidad**: `npx tsc --noEmit` en `3bf` y en `mario-mojica-plataforma` con **0 errores**.
 
 - [x] **[24 de Octubre, 2026] Hito 286: Coreografía Secuencial Pareada Correderas ➔ Tornillos (Paso P02), Deselección en Manual 3D y Blindaje Anti-Bloqueo de Gamma (`GammaLiveIndicator.tsx`, `Viewer3D.tsx`, `createSceneInstanceSlice.ts`, `multiplePlusKinematics.ts`, `X-Manual.3bm.json`, `WORKER.md`)**:
   * **Coreografía Secuencial Pareada (Corredera ➔ 2 Tornillos Inmediatos)**: Erradicado el desorden de animación donde tornillos del fondo flotaban sobre el vacío antes de posarse su corredera. Ahora la primera corredera que se apoya en la madera recibe de inmediato sus 2 tornillos:

@@ -3838,3 +3838,19 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
   * Todos los daemons activos y operativos en segundo plano.
 
+
+
+---
+
+### 🚀 Hito 288: Actualización de Edge TTS a v2.1.1 en Ecosistema B2B, Resolución de Bloqueo 403/200 y Blindaje Definitivo de Exportación GLB (< 1.5 MB) (`exportManualGlb.ts`, `compress-glb/route.ts`, `mario-mojica-plataforma/package.json`, `3bf/package.json`) (27 de Octubre, 2026)
+- **1. Actualización Crítica de Microsoft Edge TTS (v2.1.1) en Plataforma B2B y 3dBimFab (`mario-mojica-plataforma`, `3bf`)**:
+  * **Causa Raíz de Caída de Locución (Error 403 / 200 WebSocket)**: Microsoft actualizó a nivel mundial su protocolo de autenticación e intercambio de tokens (`Sec-MS-GEC`) para Edge TTS, bloqueando las peticiones de síntesis provenientes de versiones anteriores (`msedge-tts@2.0.5` y `2.1.0`).
+  * **Actualización y Blindaje**: Instalación de `msedge-tts@2.1.1` tanto en la Plataforma B2B (`mario-mojica-plataforma`) como en el motor `3dBimFab`, restaurando la generación instantánea de locuciones neurales en español, portugués e inglés con soporte de pausas y sin caídas en servidor de desarrollo ni producción.
+- **2. Diagnóstico y Erradicación Definitiva de GLBs Monstruosos (>400 MB ➔ 1.5 MB) (`exportManualGlb.ts`, `compress-glb/route.ts`)**:
+  * **Causa Raíz de los 444 MB en P02**: Análisis forense del buffer binario reveló que el bloque de geometría binaria y Draco pesaba solo 1.41 MB, pero el texto JSON (`Chunk 0`) alcanzaba **443 MB**. El operador spread `...mesh.userData` inyectaba recursivamente en cada malla el objeto `materialPBR`, que contenía cadenas `data:image/png;base64` de 5.8 MB por pieza. `GLTFExporter` serializaba este base64 en `node.extras` para las 76 mallas.
+  * **Corte Inmediato de Piezas Inactivas**: Implementada la condición de descarte estricta en `exportarGlbPasoManual`: si una pieza no es activa del paso ni es heredada, se omite de raíz.
+  * **Sanitización Universal Pre-Exportación (`sanitizarArbolExportacion`)**: Función interceptora previa a `GLTFExporter.parse` que purga de `userData` cualquier string mayor a 256 caracteres, texturas y referencias no primitivas.
+  * **Guardián Defensivo en Backend (`/api/compress-glb`)**: El transformador `@gltf-transform` recorre todos los nodos y materiales depurando `extras` para garantizar un GLB final ultra-ligero de **~1.5 MB** (reducción del 99.7%).
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` y en `mario-mojica-plataforma` con **0 errores**.
+  * Síntesis de locución y exportación GLB verificadas en caliente con éxito total.
