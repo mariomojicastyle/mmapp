@@ -438,9 +438,7 @@ function ActualModel(props) {
       animations.forEach((a) => {
         if (a.duration && a.duration > maxDur) maxDur = a.duration;
       });
-      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
-      const effectiveVisualDur = isStep02 ? maxDur * 2.0 : maxDur;
-      useEnviroment.getState().SetAnimDuration(effectiveVisualDur);
+      useEnviroment.getState().SetAnimDuration(maxDur);
     } else {
       useEnviroment.getState().SetAnimDuration(0);
     }
@@ -472,15 +470,12 @@ function ActualModel(props) {
   useEffect(() => {
     window.__seekAnimation = (targetTime) => {
       const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
-      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
       const validTime = Math.max(0, targetTime);
       const effectiveAnimDur = animDuration > 0 ? animDuration : validTime;
       
       let animTargetTime = Math.min(validTime, effectiveAnimDur);
       if (isStep00 && animDuration > 0) {
         animTargetTime = validTime % animDuration;
-      } else if (isStep02) {
-        animTargetTime = Math.min(validTime * 0.5, effectiveAnimDur);
       }
 
       if (actions) {
@@ -533,7 +528,6 @@ function ActualModel(props) {
 
     window.__resumeAnimation = () => {
       const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
-      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
       const currentTime = useEnviroment.getState().animationCurrentTime || 0;
       const effectiveAnimDur = animDuration > 0 ? animDuration : currentTime;
       if (actions) {
@@ -542,13 +536,6 @@ function ActualModel(props) {
             if (isStep00) {
               act.paused = false;
               act.play();
-            } else if (isStep02) {
-              if (currentTime * 0.5 < effectiveAnimDur - 0.05) {
-                act.paused = false;
-                act.play();
-              } else {
-                act.paused = true;
-              }
             } else {
               if (currentTime < effectiveAnimDur - 0.05) {
                 act.paused = false;
@@ -565,7 +552,6 @@ function ActualModel(props) {
     // Sincronizador llamado por el audio mientras avanza
     window.__syncAnimationToTime = (time) => {
       const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
-      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
       const effectiveAnimDur = animDuration > 0 ? animDuration : time;
       
       if (isStep00) {
@@ -573,8 +559,7 @@ function ActualModel(props) {
         return;
       }
 
-      const evalTime = isStep02 ? time * 0.5 : time;
-      if (evalTime >= effectiveAnimDur && actions) {
+      if (time >= effectiveAnimDur && actions) {
         Object.values(actions).forEach((act) => {
           if (act && !act.paused) {
             act.paused = true;
@@ -627,7 +612,6 @@ function ActualModel(props) {
 
     if (StartApp === true && actions) {
       const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
-      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
 
       Object.values(actions).forEach((act) => {
         if (act) {
@@ -639,7 +623,7 @@ function ActualModel(props) {
           } else {
             act.clampWhenFinished = true; // Detiene la animación cuando finaliza
             act.loop = THREE.LoopOnce;    // Ejecuta la animación una sola vez
-            act.timeScale = isStep02 ? 0.5 : 1.0; // 50% de velocidad (duración x2) en paso 02
+            act.timeScale = 1.0;
           }
           act.paused = false;           // Asegura que arranque activa
           act.play();                   // Iniciar la animación si la app ha comenzado
@@ -863,7 +847,6 @@ function ActualModel(props) {
       let masterTime = 0;
       const hasAudioTrack = audioEl && audioDur > 0 && !isNaN(audioEl.duration);
       const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
-      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
       const phase = useEnviroment.getState().phaseAudio;
 
       if (hasAudioTrack) {
@@ -873,8 +856,7 @@ function ActualModel(props) {
           // El audio ya concluyó pero la animación 3D continúa su recorrido hasta animDur
           const activeAct = Object.values(actions || {}).find((a) => a && typeof a.time === "number");
           if (activeAct && typeof activeAct.time === "number") {
-            // Si el paso opera a escala reducida (ej. P02 al 50%), convertimos el tiempo interno al tiempo visual real
-            masterTime = isStep02 ? activeAct.time * 2.0 : activeAct.time;
+            masterTime = activeAct.time;
           } else {
             masterTime = audioDur;
           }
@@ -884,7 +866,7 @@ function ActualModel(props) {
       } else if (actions) {
         const activeAct = Object.values(actions).find((a) => a && a.isRunning()) || Object.values(actions)[0];
         if (activeAct && typeof activeAct.time === "number") {
-          masterTime = isStep02 ? activeAct.time * 2.0 : activeAct.time;
+          masterTime = activeAct.time;
         }
       }
 
@@ -908,9 +890,6 @@ function ActualModel(props) {
         if (isStep00 && animDur > 0) {
           // Bucle continuo en Paso 00 durante toda la locución (Ravenna)
           targetAnimTime = masterTime % animDur;
-        } else if (isStep02) {
-          // 50% de velocidad (duración x2): el mixer interno llega a su clip original de duración a través del factor 0.5
-          targetAnimTime = Math.min(masterTime * 0.5, animDur * 0.5);
         }
 
         const isFinished = !isStep00 && (masterTime >= totalDur);
@@ -918,7 +897,7 @@ function ActualModel(props) {
         Object.values(actions).forEach((act) => {
           if (act) {
             if (isFinished) {
-              act.time = isStep02 ? animDur * 0.5 : animDur;
+              act.time = animDur;
               act.paused = true;
             } else {
               if (isPlaying) {
