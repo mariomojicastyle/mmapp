@@ -17,6 +17,14 @@ const nextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: ["msedge-tts", "ws"],
+    outputFileTracingExcludes: {
+      "*": [
+        "./storage/**/*",
+        "./Definiciones/**/*",
+        "./graphify-out/**/*",
+        "./worker/**/*",
+      ],
+    },
     serverActions: {
       bodySizeLimit: "25mb",
     },
