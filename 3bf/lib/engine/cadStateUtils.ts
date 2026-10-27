@@ -1328,6 +1328,8 @@ export interface TableroCapaReferencia {
   tieneRotacion?: boolean;
   tLlegada?: number;
   tRotStart?: number;
+  evaluarGiro?: (t: number) => { qCurGiro: THREE.Quaternion; matCurGiro: THREE.Matrix4 };
+  pivoteLocal?: THREE.Vector3;
 }
 
 /**

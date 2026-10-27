@@ -155,6 +155,7 @@ import { AutoFramingCameraController } from "./AutoFramingCameraController";
 import { ManualCameraDirector } from "./ManualCameraDirector";
 
 import DfMAShieldAlert from "./DfMAShieldAlert";
+import TableroGizmo3D from "./TableroGizmo3D";
 
 
 
@@ -952,7 +953,7 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
 
 function SelectionController() {
 
-  const { gl, camera } = useThree();
+  const { gl, camera, scene } = useThree();
 
   const { setObjetoSeleccionado, seleccionarInstancia, modoTransformacion, snapPicking, cancelarGrab, confirmarGrab } = use3BFStore();
 
@@ -961,6 +962,43 @@ function SelectionController() {
   React.useEffect(() => {
 
     const domElement = gl.domElement;
+
+    const isGizmoInteracting = (e?: MouseEvent | PointerEvent) => {
+      if (typeof window === "undefined") return false;
+      if (
+        (window as any).__3bfIsDraggingGizmo ||
+        (window as any).__3bfHoveringGizmo ||
+        Date.now() - ((window as any).__3bfLastGizmoDragTime || 0) < 500
+      ) {
+        return true;
+      }
+      if (e && scene) {
+        const rect = gl.domElement.getBoundingClientRect();
+        const pointerNDC = new THREE.Vector2(
+          ((e.clientX - rect.left) / rect.width) * 2 - 1,
+          -((e.clientY - rect.top) / rect.height) * 2 + 1
+        );
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(pointerNDC, camera);
+        const hits = ray.intersectObjects(scene.children, true);
+        const hitGizmo = hits.some((h) => {
+          const obj = h.object;
+          const n = (obj.name || "").toLowerCase();
+          return (
+            n.includes("gizmo") ||
+            n.includes("gumball") ||
+            !!(obj as any).userData?.isGizmo ||
+            !!(obj.parent && (obj.parent as any).userData?.isGizmo)
+          );
+        });
+        if (hitGizmo) {
+          (window as any).__3bfHoveringGizmo = true;
+          (window as any).__3bfLastGizmoDragTime = Date.now();
+          return true;
+        }
+      }
+      return false;
+    };
 
 
 
@@ -1082,6 +1120,8 @@ function SelectionController() {
 
     const handlePointerDown = (e: PointerEvent) => {
 
+      if (isGizmoInteracting(e)) return;
+
       const state = use3BFStore.getState();
 
       if (state.modoPickingManual.activo) {
@@ -1185,7 +1225,7 @@ function SelectionController() {
 
       e.preventDefault();
 
-
+      if (isGizmoInteracting(e)) return;
 
       const state = use3BFStore.getState();
 
@@ -3461,6 +3501,16 @@ export default function Viewer3D() {
 
         onPointerMissed={() => {
 
+          if (typeof window !== "undefined") {
+            if (
+              (window as any).__3bfIsDraggingGizmo ||
+              (window as any).__3bfHoveringGizmo ||
+              Date.now() - ((window as any).__3bfLastGizmoDragTime || 0) < 500
+            ) {
+              return;
+            }
+          }
+
           const state = use3BFStore.getState();
 
           state.setHoveredPiece(null);
@@ -3538,6 +3588,8 @@ export default function Viewer3D() {
                 <AssemblyPiecePositioner furnitureGroup={furnitureGroup} />
 
                 <SubbloquesTooltipsBillboard furnitureGroup={furnitureGroup} />
+
+                <TableroGizmo3D furnitureGroup={furnitureGroup} />
 
               </>
 

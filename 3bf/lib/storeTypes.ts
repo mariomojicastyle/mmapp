@@ -507,6 +507,27 @@ export interface SubBloqueArmado {
 }
 
 
+export interface TableroKeyframePos {
+  t: number; // Segundo exacto
+  x: number; // cm en eje X global
+  y: number; // cm en eje Y global (altura sobre el banco)
+  z: number; // cm en eje Z global
+}
+
+export interface TableroKeyframeRot {
+  t: number; // Segundo exacto
+  rx: number; // Rotación en eje X (grados)
+  ry: number; // Rotación en eje Y (grados)
+  rz: number; // Rotación en eje Z (grados)
+}
+
+export interface TableroGizmoPivote {
+  modo?: "cdg" | "canto" | "personalizado";
+  mostrarGizmo?: boolean;
+  offsetCm?: [number, number, number]; // [offsetX, offsetY, offsetZ] en cm respecto a CDG
+  modoTransform?: "translate" | "rotate"; // Permite alternar entre flechas de mover y arcos de rotar
+}
+
 export interface TableroCapaPlus {
   id: string; // ej. "Peça 10"
   destinoId: string; // "base_master" o id de otra pieza ej. "Peça 7"
@@ -517,6 +538,9 @@ export interface TableroCapaPlus {
   offsetZCm?: number;
   elevacionZCm?: number; // Elevación vertical de taller sobre el banco/suelo (en cm, +Z taller = +Y Three.js mundo)
   rotacionGrados?: [number, number, number]; // [rotX, rotY, rotZ] en grados (ángulos cerrados: 0, 90, 180, -90)
+  keyframesPos?: TableroKeyframePos[]; // Secuencia de fotogramas de traslación estilo CapCut
+  keyframesRot?: TableroKeyframeRot[]; // Secuencia de fotogramas de rotación estilo CapCut
+  gizmoPivote?: TableroGizmoPivote;    // Calibración del eje/pivote de giro
 }
 
 export interface HerrajeDestelloConfig {
@@ -537,6 +561,17 @@ export interface HerrajeCapaPlus {
   posRestWorld?: [number, number, number]; // Posición 3D en reposo para ordenar de alejada a cercana a la cámara
 }
 
+export type EstiloCinematicaHerraje = "pop" | "firme" | "suave" | "lineal";
+
+export interface CinematicaFamiliaHerraje {
+  familia: string; // ej. "Parafuso E", "Parafuso A", "Cavilha", "Porca"
+  estilo: EstiloCinematicaHerraje; // por defecto "pop"
+  escalaInicialPct: number; // por defecto 180 (180%)
+  distanciaGiroMm: number; // por defecto 35 (35mm) o 0
+  gradosGiroTotal: number; // por defecto 820 (820°) o 0
+  colapsada?: boolean; // para minimizar la cápsula
+}
+
 export interface OffsetBancoCm {
   x: number; // Desplazamiento transversal en cm (+ derecha / - izquierda)
   y: number; // Desplazamiento vertical en cm (+ arriba / - abajo, por defecto 0)
@@ -552,6 +587,7 @@ export interface CapaMultiplePlus {
   tableros: TableroCapaPlus[];
   herrajes: HerrajeCapaPlus[];
   congelados: HerrajeCapaPlus[];
+  cinematicasHerrajes?: Record<string, CinematicaFamiliaHerraje>;
   bloquesHeredadosIds?: string[];
   bloquesHeredadosVisibles?: Record<string, boolean>;
   piezaMaster?: string;
@@ -995,9 +1031,12 @@ export interface State3BF {
   asignarTableroACapaPlus: (pasoId: string, capaId: string, tableroId: string) => void;
   desasignarTableroDeCapaPlus: (pasoId: string, capaId: string, tableroId: string) => void;
   actualizarTableroCapaPlus: (pasoId: string, capaId: string, tableroId: string, cambios: Partial<TableroCapaPlus>) => void;
+  actualizarTableroPlus: (pasoId: string, capaId: string, tableroId: string, cambios: Partial<TableroCapaPlus>) => void;
+  fijarPoseBancoCapaPlus: (pasoId: string, capaId: string) => void;
   asignarHerrajeACapaPlus: (pasoId: string, capaId: string, herrajeId: string, congelado?: boolean) => void;
   desasignarHerrajeDeCapaPlus: (pasoId: string, capaId: string, herrajeId: string) => void;
   actualizarHerrajeCapaPlus: (pasoId: string, capaId: string, herrajeId: string, cambios: Partial<HerrajeCapaPlus>) => void;
+  actualizarCinematicaFamiliaPlus: (pasoId: string, capaId: string, familia: string, partial: Partial<CinematicaFamiliaHerraje>) => void;
   toggleCongelarHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => void;
   asociarBloqueHeredadoPlus: (pasoId: string, capaId: string, bloquePasoId: string) => void;
   desasociarBloqueHeredadoPlus: (pasoId: string, capaId: string, bloquePasoId: string) => void;

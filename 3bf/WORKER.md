@@ -432,8 +432,8 @@ La única fuente de verdad física irrefutable es la **geometría 3D en el espac
 
 ### 3. Mapeo Físico Verificado — Cómoda Ravenna (Paso P02)
 * **Peça 7 (Lateral Izquierdo en Banco):**
-  * Correderas: Corrediça - Fixa (9) (Fondo/Atrás), Corrediça - Fixa (5) (Centro/Medio), Corrediça - Fixa (1) (Frente/Adelante).
-  * Tornillos: 6 unidades Parafuso E (2 por corredera: [61, 25] para fija 9, [31, 65] para fija 5, [38, 69] para fija 1).
+  * Correderas: Corrediça - Fixa (1) (Frente/Adelante), Corrediça - Fixa (5) (Centro/Medio), Corrediça - Fixa (9) (Fondo/Atrás).
+  * Tornillos: 6 unidades Parafuso E (2 por corredera: [61, 25] para fija 1, [31, 65] para fija 5, [38, 69] para fija 9).
   * Tarugos: 2 unidades Cavilha (77) y Cavilha (51).
 * **Peça 6 (Divisor Central en Banco):**
   * Correderas: 6 unidades en total: Cara A Corrediça - Fixa (11, 7, 3) y Cara B Corrediça - Fixa (10, 6, 2).

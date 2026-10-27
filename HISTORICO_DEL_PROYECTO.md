@@ -3808,3 +3808,33 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
   * Daemons de RhinoCompute, Worker Python, Next.js y Cloudflare Tunnel 100% operativos.
+
+---
+
+### 🚀 Hito 287: Arquitectura de Doble Rotación, Erradicación de Gimbal Lock y Cinemáticas Globales Procedurales de Herrajes con Atornillamiento y Rebote Elástico (`multiplePlusKinematics.ts`, `CapsulaTableroPlus.tsx`, `CinematicasHerrajesGlobal.tsx`, `CapaMultiplePlusCard.tsx`, `MultiplePlusSection.tsx`, `manualMultiplePlusSlice.ts`, `storeTypes.ts`) (26 de Octubre, 2026)
+- **1. Arquitectura de Doble Rotación y Erradicación de Gimbal Lock en Tableros (`multiplePlusKinematics.ts`, `CapsulaTableroPlus.tsx`)**:
+  * **Diagnóstico de Pérdida de Grado de Libertad**: Al acostar o rotar un tablero con $Y = \pm 90^\circ$ usando la convención clásica de ángulos de Euler `XYZ`, los ejes $X$ y $Z$ locales se alineaban en la misma dirección en el espacio tridimensional (bloqueo de cardán / *Gimbal Lock*), impidiendo rotar el tablero alrededor del eje $Y$ mundial del banco de trabajo.
+  * **Desacoplamiento Funcional en Dos Cápsulas**:
+    - **`Giro Relativo`**: Pose fija de banco (`tablero.rotacionGrados`) para acostar o colocar la pieza sobre la mesa de armado (con botón rápido `+180°Y`).
+    - **`Giro Global (°)`**: Animación cinemática a lo largo de la línea de tiempo (`tablero.keyframesRot`) gobernada por los diamantes de fotogramas clave 💎.
+  * **Evaluador Cinemático Intrínseco**: Implementada la función canónica `resolverRotacionTotalTablero(qBase, rxGlobal, ryGlobal, rzGlobal)` con multiplicación intrínseca $Q_{\text{total}}(t) = Q_Z(rz) \cdot Q_Y(ry) \cdot Q_X(rx) \cdot Q_{\text{base}}$, garantizando giros 100% predecibles sobre los ejes fijos del banco de trabajo sin colisiones.
+  * **Reactividad Inmediata en Inputs Numéricos**: Al tipear valores (ej. `Z: 30`), la pieza se desplaza en tiempo real en el visor 3D y crea/actualiza su fotograma clave de inmediato.
+  * **Limpieza de UI**: Eliminados los botones obsoletos de la cabecera general (`orientacionBanco`) y los botones redundantes de fijar pose pre-ensamble. Formato de segundos sin decimales en la línea de tiempo.
+- **2. Cinemáticas Globales Procedurales de Herrajes por Familia (`CinematicasHerrajesGlobal.tsx`, `multiplePlusKinematics.ts`, `CapaMultiplePlusCard.tsx`, `manualMultiplePlusSlice.ts`, `storeTypes.ts`)**:
+  * **Concepto Canónico de Familia Sin Afectar la Lista Individual**: Se preservó la cuadrícula de herrajes individuales intacta (con sus ejes, apa y destellos) y se creó una sección dedicada **`Cinemáticas herrajes`** ubicada de forma visible arriba de la sección de herrajes.
+  * **Cápsulas Globales de Familia (Una por cada tipo del mueble, ej. `Parafuso E`, `Cavilha`)**:
+    - Generadas automáticamente por defecto si el herraje existe en el mueble (sin botón de eliminar `✕`).
+    - Exclusión estricta de correderas telescópicas (las correderas no giran ni rebotan).
+    - Botón de minimizar/expandir (`▾` / `▸`) para mantener la tarjeta ultracompacta.
+  * **Cuatro Parámetros Físicos Independientes y Editables**:
+    1. **Estilo de Curva**: Selector tipográfico limpio (`Pop Elástico`, `Impacto Firme`, `Suave Técnico`, `Lineal Continuo`) sin emojis ni ruido visual.
+    2. **Escala Inicial (%)**: Campo numérico editable independiente (ej. `180%`, `220%`, `100%`) con auto-selección al contacto.
+    3. **Iniciar giro a (mm)**: Distancia límite al barreno a partir de la cual comienza el efecto de atornillamiento (ej. `35 mm`, `0 mm`).
+    4. **Grados de Giro (°)**: Rotación angular total acumulada (ej. `820°`, `180°`, `0°`).
+  * **Física y Animación en Three.js (`multiplePlusKinematics.ts`)**:
+    - **Rebote Elástico (*Pop*)**: Overshoot hacia abajo al $85\%$ y rebote hacia afuera al $112\%$ antes de asentarse al $100\%$ del tamaño real.
+    - **Atornillamiento Colineal Procedural**: Al entrar al umbral de distancia milimétrica, el tornillo o herraje rota automáticamente sobre su propio vector axial de inserción sin desviarse del barreno.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Todos los daemons activos y operativos en segundo plano.
+

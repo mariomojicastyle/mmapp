@@ -1,4 +1,36 @@
 /**
+ * 📐 Resuelve la orientación total de un tablero combinando:
+ * 1. Pose Base Relativa de Banco (qBase): rotación fija de reposo para acostar la pieza.
+ * 2. Giro Global de Taller (rx, ry, rz): rotación de animación alrededor de los ejes fijos del banco de trabajo:
+ *    - rx: Giro Transversal (Three.js X)
+ *    - ry: Giro Longitudinal de Mesa (Three.js Z)
+ *    - rz: Giro Vertical / Tornamesa sobre la mesa (Three.js Y)
+ */
+export function resolverRotacionTotalTablero(
+  qBase: THREE.Quaternion,
+  rxGlobal: number = 0,
+  ryGlobal: number = 0,
+  rzGlobal: number = 0
+): { qCurGiro: THREE.Quaternion; matCurGiro: THREE.Matrix4 } {
+  if (Math.abs(rxGlobal) <= 0.0001 && Math.abs(ryGlobal) <= 0.0001 && Math.abs(rzGlobal) <= 0.0001) {
+    return {
+      qCurGiro: qBase.clone(),
+      matCurGiro: new THREE.Matrix4().makeRotationFromQuaternion(qBase),
+    };
+  }
+  const qZ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(rzGlobal));
+  const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(ryGlobal));
+  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(rxGlobal));
+
+  const qGlobal = qZ.multiply(qY).multiply(qX);
+  const qTotal = qGlobal.multiply(qBase);
+  return {
+    qCurGiro: qTotal,
+    matCurGiro: new THREE.Matrix4().makeRotationFromQuaternion(qTotal),
+  };
+}
+
+/**
  * multiplePlusKinematics.ts
  *
  * Motor cinemático aislado para el 5º Modo de Animación: "Múltiple Plus" (multiple_plus).
@@ -100,26 +132,23 @@ function evaluarGiroTableroAtTime(
       matCurGiro: new THREE.Matrix4(),
     };
   }
-  if (t <= tRotStart) {
-    return {
-      qCurGiro: qGiro.clone(),
-      matCurGiro: new THREE.Matrix4().makeRotationFromQuaternion(qGiro),
-    };
-  }
-  if (t >= tRotEnd) {
-    return {
-      qCurGiro: qIdentitySanitizado.clone(),
-      matCurGiro: new THREE.Matrix4(),
-    };
-  }
-  const alpha = (t - tRotStart) / Math.max(0.001, tRotEnd - tRotStart);
-  const qCurGiro = qGiro.clone().slerp(qIdentitySanitizado, alpha);
-  const matCurGiro = new THREE.Matrix4().makeRotationFromQuaternion(qCurGiro);
-  return { qCurGiro, matCurGiro };
+  // 📐 En armado de taller en banco (Múltiple Plus), la pieza permanece fija en su orientación
+  // de banco qGiro durante todo el paso (a menos que tenga keyframesRot explícitos de animación).
+  return {
+    qCurGiro: qGiro.clone(),
+    matCurGiro: new THREE.Matrix4().makeRotationFromQuaternion(qGiro),
+  };
 }
 
 /**
  * Resuelve el vector de aproximación en 3D según el eje especificado.
+ */
+/**
+ * 📐 Resuelve el vector de aproximación en 3D respetando el Traductor Canónico:
+ * Ejes de Taller (Rhino Z-Up) -> WebGL (Three.js Y-Up):
+ * - +Z / -Z (Taller: Vertical / perpendicular a la mesa) -> Three.js Y (altura)
+ * - +Y / -Y (Taller: Longitudinal sobre la mesa) -> Three.js Z (profundidad banco)
+ * - +X / -X (Taller: Transversal sobre la mesa) -> Three.js X (lateral)
  */
 function resolverVectorEje(eje: string, distanciaM: number): THREE.Vector3 {
   const v = new THREE.Vector3();
@@ -131,19 +160,21 @@ function resolverVectorEje(eje: string, distanciaM: number): THREE.Vector3 {
       v.set(-distanciaM, 0, 0);
       break;
     case "+Y":
-      v.set(0, distanciaM, 0);
-      break;
-    case "-Y":
-      v.set(0, -distanciaM, 0);
-      break;
-    case "+Z":
+      // Longitudinal taller -> Z de Three.js
       v.set(0, 0, distanciaM);
       break;
-    case "-Z":
+    case "-Y":
       v.set(0, 0, -distanciaM);
       break;
+    case "+Z":
+      // Vertical taller (altura perpendicular al banco) -> Y de Three.js
+      v.set(0, distanciaM, 0);
+      break;
+    case "-Z":
+      v.set(0, -distanciaM, 0);
+      break;
     default:
-      v.set(-distanciaM, 0, 0); // Defecto: -X
+      v.set(0, distanciaM, 0); // Defecto: +Z (vertical taller hacia arriba)
       break;
   }
   return v;
@@ -450,8 +481,157 @@ export function compilarMultiplePlusPaso(
     return null;
   };
 
+  const resolverEvaluadorDeltaTablero = (
+    t: TableroCapaPlus,
+    capaItem: CapaMultiplePlus
+  ): { evalDelta: (time: number) => THREE.Vector3; pTimes: number[]; tLlegadaFinal: number; tRotStart: number } => {
+    const vElevLocal = calcularVectorElevacionLocal(t.elevacionZCm);
+
+    // 1. Si el tablero tiene fotogramas clave explícitos de posición (Línea de tiempo / CapCut):
+    if (t.keyframesPos && t.keyframesPos.length > 0) {
+      const kfPos = [...t.keyframesPos].sort((a, b) => a.t - b.t);
+      // 📐 Traductor Canónico Rhino (Z-Up) -> Three.js (Y-Up):
+      // x: transversal (X taller -> X Three.js)
+      // y: longitudinal mesa (Y taller -> Z Three.js)
+      // z: elevación vertical (Z taller -> Y Three.js)
+      // IMPORTANTE: vElevLocal siempre se suma como cota de referencia de banco/suelo.
+      const toLocalVector = (xCm: number, yCm: number, zCm: number) => {
+        const vWorldM = new THREE.Vector3(xCm / 100, zCm / 100, yCm / 100);
+        const vLocal = invRotMat ? vWorldM.applyMatrix4(invRotMat) : vWorldM;
+        return vLocal.add(vElevLocal);
+      };
+
+      const evalDelta = (time: number) => {
+        if (kfPos.length === 1 || time <= kfPos[0].t) {
+          return toLocalVector(kfPos[0].x, kfPos[0].y, kfPos[0].z);
+        }
+        const lastK = kfPos[kfPos.length - 1];
+        if (time >= lastK.t) {
+          return toLocalVector(lastK.x, lastK.y, lastK.z);
+        }
+        for (let i = 0; i < kfPos.length - 1; i++) {
+          const kA = kfPos[i];
+          const kB = kfPos[i + 1];
+          if (time >= kA.t && time <= kB.t) {
+            const alpha = (time - kA.t) / Math.max(0.0001, kB.t - kA.t);
+            const vA = toLocalVector(kA.x, kA.y, kA.z);
+            const vB = toLocalVector(kB.x, kB.y, kB.z);
+            return vA.lerp(vB, alpha);
+          }
+        }
+        return toLocalVector(lastK.x, lastK.y, lastK.z);
+      };
+
+      const pTimes = Array.from(new Set([0, duracionPaso, ...kfPos.map((k) => k.t)])).sort((a, b) => a - b);
+      return { evalDelta, pTimes, tLlegadaFinal: duracionPaso, tRotStart: 0 };
+    }
+
+    // 2. Cinemática tradicional por acople o destino:
+    const tLow = t.id.replace(/^RH_OUT:/i, "").trim().toLowerCase();
+    const masterConf = resolverMasterConfigParaTablero(t, capaItem);
+    const vMaster = masterConf ? masterConf.vOffset : new THREE.Vector3(0, 0, 0);
+    const tieneMasterOffset = masterConf !== null && vMaster.lengthSq() > 0.00001;
+
+    let esLaPropiaMaster = false;
+    let esHijaDelMaster = false;
+    const destLowTabH = (t.destinoId || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+
+    if (tieneMasterOffset && masterConf) {
+      const mId = masterConf.masterId;
+      if (sonMismoTableroOInstancia(tLow, mId)) {
+        esLaPropiaMaster = !destLowTabH || destLowTabH === "base_master";
+      } else if (sonMismoTableroOInstancia(destLowTabH, mId)) {
+        esHijaDelMaster = true;
+      } else if (capaItem.piezaMaster && sonMismoTableroOInstancia(capaItem.piezaMaster, mId) && (!destLowTabH || destLowTabH === "base_master")) {
+        esHijaDelMaster = true;
+      }
+    }
+
+    const offX = (t.offsetXCm || 0) / 100;
+    const offY = (t.offsetYCm || 0) / 100;
+    const offZ = (t.offsetZCm || 0) / 100;
+    const vPropio = new THREE.Vector3(offX, offY, offZ).add(vElevLocal);
+    const tieneOffsetPropio = vPropio.lengthSq() > 0.00001;
+    const tInicioMov = typeof t.tiempoInicioMovimiento === "number" ? t.tiempoInicioMovimiento : 500;
+
+    let vLlegadaTab = new THREE.Vector3(0, 0, 0);
+    if (destLowTabH && destLowTabH !== "base_master") {
+      const tabDest = (capaItem.tableros || []).find((tb) => sonMismoTableroOInstancia(tb.id, destLowTabH));
+      if (tabDest) {
+        const dOffX = (tabDest.offsetXCm || 0) / 100;
+        const dOffY = (tabDest.offsetYCm || 0) / 100;
+        const dOffZ = (tabDest.offsetZCm || 0) / 100;
+        const dElev = calcularVectorElevacionLocal(tabDest.elevacionZCm);
+        vLlegadaTab.set(dOffX, dOffY, dOffZ).add(dElev);
+      }
+    }
+
+    let evalDelta: (time: number) => THREE.Vector3;
+    let timesTab: number[] = [];
+    let tLlegadaTabFinal = duracionPaso;
+
+    if (!tieneMasterOffset || (!esLaPropiaMaster && !esHijaDelMaster)) {
+      if (tInicioMov >= duracionPaso || vPropio.distanceToSquared(vLlegadaTab) <= 0.00001) {
+        evalDelta = (_time: number) => (tieneOffsetPropio ? vPropio.clone() : vLlegadaTab.clone());
+        timesTab = [0, duracionPaso];
+      } else {
+        const distViaje = vPropio.distanceTo(vLlegadaTab);
+        const tViaje = Math.max(0.2, distViaje > 0.001 ? distViaje / velocidadTablerosM_s : 0.5);
+        const tLlegada = Math.min(duracionPaso, tInicioMov + tViaje);
+        tLlegadaTabFinal = tLlegada;
+        evalDelta = (time: number) => {
+          if (time <= tInicioMov) return vPropio.clone();
+          if (time >= tLlegada) return vLlegadaTab.clone();
+          const alpha = (time - tInicioMov) / Math.max(0.001, tLlegada - tInicioMov);
+          return vPropio.clone().lerp(vLlegadaTab, alpha);
+        };
+        timesTab = [0, tInicioMov, tLlegada, duracionPaso];
+      }
+    } else if (esLaPropiaMaster) {
+      const tAcople = (typeof t.tiempoInicioMovimiento === "number" && t.tiempoInicioMovimiento < duracionPaso)
+        ? t.tiempoInicioMovimiento
+        : masterConf!.tAcople;
+      const distV = vMaster.length();
+      const durAcople = Math.max(0.2, distV > 0.001 ? distV / velocidadTablerosM_s : masterConf!.duracionAcople);
+      const tFinAcople = Math.min(duracionPaso, tAcople + durAcople);
+      tLlegadaTabFinal = tFinAcople;
+      evalDelta = (time: number) => {
+        if (time <= tAcople) return vMaster.clone();
+        if (time >= tFinAcople) return new THREE.Vector3(0, 0, 0);
+        const alpha = (time - tAcople) / Math.max(0.001, tFinAcople - tAcople);
+        return vMaster.clone().lerp(new THREE.Vector3(0, 0, 0), alpha);
+      };
+      timesTab = [0, tAcople, tFinAcople, duracionPaso];
+    } else {
+      const vDeltaEspera = tieneOffsetPropio ? vPropio.clone() : new THREE.Vector3(0, 0, 0);
+      const distViaje = vDeltaEspera.distanceTo(vMaster);
+      const tViaje = Math.max(0.2, distViaje > 0.001 ? distViaje / velocidadTablerosM_s : 0.5);
+      const tLlegada = Math.min(masterConf!.tAcople, tInicioMov + tViaje);
+      tLlegadaTabFinal = tLlegada;
+      const tAcople = masterConf!.tAcople;
+      const tFinAcople = masterConf!.tFinAcople;
+
+      evalDelta = (time: number) => {
+        if (time <= tInicioMov) return vDeltaEspera.clone();
+        if (time < tLlegada) {
+          const alpha = (time - tInicioMov) / Math.max(0.001, tLlegada - tInicioMov);
+          return vDeltaEspera.clone().lerp(vMaster, alpha);
+        }
+        if (time <= tAcople) return vMaster.clone();
+        if (time >= tFinAcople) return new THREE.Vector3(0, 0, 0);
+        const alpha = (time - tAcople) / Math.max(0.001, tFinAcople - tAcople);
+        return vMaster.clone().lerp(new THREE.Vector3(0, 0, 0), alpha);
+      };
+      timesTab = [0, tInicioMov, tLlegada, tAcople, tFinAcople, duracionPaso];
+    }
+
+    const tRotStart = esLaPropiaMaster ? (masterConf?.tAcople ?? tInicioMov) : tInicioMov;
+    return { evalDelta, pTimes: timesTab, tLlegadaFinal: tLlegadaTabFinal, tRotStart };
+  };
+
   // Procesar cada capa
   capas.forEach((capa) => {
+
     const capaVisible = capa.visible !== false;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -583,69 +763,45 @@ export function compilarMultiplePlusPaso(
           }
         }
 
-        // 📐 Función Evaluadora de Desplazamiento del Tablero
-        let evaluarDeltaTablero: (t: number) => THREE.Vector3;
-        let pTimes: number[] = [];
-        let tLlegadaFinal = duracionPaso;
+        // 📐 Función Evaluadora de Desplazamiento del Tablero (Unificada y Canónica)
+        const resDelta = resolverEvaluadorDeltaTablero(tablero, capa);
+        let evaluarDeltaTablero = resDelta.evalDelta;
+        let pTimes = [...resDelta.pTimes];
+        let tLlegadaFinal = resDelta.tLlegadaFinal;
+        const tRotStart = resDelta.tRotStart;
 
-        if (!tieneMasterOffset || (!esLaPropiaMaster && !esHijaDelMaster)) {
-          if (tInicioMov >= duracionPaso || vPropio.distanceToSquared(vLlegada) <= 0.00001) {
-            evaluarDeltaTablero = (_t: number) => (tieneOffsetPropio ? vPropio.clone() : vLlegada.clone());
-            pTimes = [0, duracionPaso];
-          } else {
-            const distViaje = vPropio.distanceTo(vLlegada);
-            const tViaje = Math.max(0.2, distViaje > 0.001 ? distViaje / velocidadTablerosM_s : 0.5);
-            const tLlegada = Math.min(duracionPaso, tInicioMov + tViaje);
-            tLlegadaFinal = tLlegada;
-            evaluarDeltaTablero = (t: number) => {
-              if (t <= tInicioMov) return vPropio.clone();
-              if (t >= tLlegada) return vLlegada.clone();
-              const alpha = (t - tInicioMov) / Math.max(0.001, tLlegada - tInicioMov);
-              return vPropio.clone().lerp(vLlegada, alpha);
-            };
-            pTimes = [0, tInicioMov, tLlegada, duracionPaso];
-          }
-        } else if (esLaPropiaMaster) {
-          const tAcople = (typeof tablero.tiempoInicioMovimiento === "number" && tablero.tiempoInicioMovimiento < duracionPaso)
-            ? tablero.tiempoInicioMovimiento
-            : masterConf!.tAcople;
-          const distV = vMaster.length();
-          const durAcople = Math.max(0.2, distV > 0.001 ? distV / velocidadTablerosM_s : masterConf!.duracionAcople);
-          const tFinAcople = Math.min(duracionPaso, tAcople + durAcople);
-          tLlegadaFinal = tFinAcople;
-          evaluarDeltaTablero = (t: number) => {
-            if (t <= tAcople) return vMaster.clone();
-            if (t >= tFinAcople) return new THREE.Vector3(0, 0, 0);
-            const alpha = (t - tAcople) / Math.max(0.001, tFinAcople - tAcople);
-            return vMaster.clone().lerp(new THREE.Vector3(0, 0, 0), alpha);
-          };
-          pTimes = [0, tAcople, tFinAcople, duracionPaso];
-        } else {
-          // Hija del Master (vPropio ya es el vector directo al piso guardado por el posicionador)
-          const vDeltaEspera = tieneOffsetPropio ? vPropio.clone() : new THREE.Vector3(0, 0, 0);
-          const distViaje = vDeltaEspera.distanceTo(vMaster);
-          const tViaje = Math.max(0.2, distViaje > 0.001 ? distViaje / velocidadTablerosM_s : 0.5);
-          const tLlegada = Math.min(masterConf!.tAcople, tInicioMov + tViaje);
-          tLlegadaFinal = tLlegada;
-          const tAcople = masterConf!.tAcople;
-          const tFinAcople = masterConf!.tFinAcople;
-
-          evaluarDeltaTablero = (t: number) => {
-            if (t <= tInicioMov) return vDeltaEspera.clone();
-            if (t < tLlegada) {
-              const alpha = (t - tInicioMov) / Math.max(0.001, tLlegada - tInicioMov);
-              return vDeltaEspera.clone().lerp(vMaster, alpha);
-            }
-            if (t <= tAcople) return vMaster.clone();
-            if (t >= tFinAcople) return new THREE.Vector3(0, 0, 0);
-            const alpha = (t - tAcople) / Math.max(0.001, tFinAcople - tAcople);
-            return vMaster.clone().lerp(new THREE.Vector3(0, 0, 0), alpha);
-          };
-          pTimes = [0, tInicioMov, tLlegada, tAcople, tFinAcople, duracionPaso];
-        }
-
-        const tRotStart = esLaPropiaMaster ? (masterConf?.tAcople ?? tInicioMov) : tInicioMov;
         const tRotEnd = tLlegadaFinal;
+
+                // 🎬 Soporte de Fotogramas Clave de Rotación (Giro Global de Taller sobre Banco)
+        let evaluarGiroTablero = (_t: number) => resolverRotacionTotalTablero(qGiro, 0, 0, 0);
+        if (tablero.keyframesRot && tablero.keyframesRot.length > 0) {
+          const kfRot = [...tablero.keyframesRot].sort((a, b) => a.t - b.t);
+          pTimes = Array.from(new Set([...pTimes, ...kfRot.map((k) => k.t)])).sort((a, b) => a - b);
+          evaluarGiroTablero = (t: number) => {
+            if (kfRot.length === 1 || t <= kfRot[0].t) {
+              const k = kfRot[0];
+              return resolverRotacionTotalTablero(qGiro, k.rx || 0, k.ry || 0, k.rz || 0);
+            }
+            const lastIdx = kfRot.length - 1;
+            if (t >= kfRot[lastIdx].t) {
+              const k = kfRot[lastIdx];
+              return resolverRotacionTotalTablero(qGiro, k.rx || 0, k.ry || 0, k.rz || 0);
+            }
+            for (let i = 0; i < kfRot.length - 1; i++) {
+              const tA = kfRot[i].t;
+              const tB = kfRot[i + 1].t;
+              if (t >= tA && t <= tB) {
+                const alpha = (t - tA) / Math.max(0.0001, tB - tA);
+                const rx = THREE.MathUtils.lerp(kfRot[i].rx || 0, kfRot[i + 1].rx || 0, alpha);
+                const ry = THREE.MathUtils.lerp(kfRot[i].ry || 0, kfRot[i + 1].ry || 0, alpha);
+                const rz = THREE.MathUtils.lerp(kfRot[i].rz || 0, kfRot[i + 1].rz || 0, alpha);
+                return resolverRotacionTotalTablero(qGiro, rx, ry, rz);
+              }
+            }
+            const k = kfRot[lastIdx];
+            return resolverRotacionTotalTablero(qGiro, k.rx || 0, k.ry || 0, k.rz || 0);
+          };
+        }
 
         // 📐 Si el tablero rota durante su desplazamiento, sub-muestrear keyframes densos
         // a lo largo del arco rotacional para eliminar el colapso lineal de cuerdas de Three.js
@@ -664,20 +820,17 @@ export function compilarMultiplePlusPaso(
 
         pTimes.forEach((t) => {
           const deltaTab = evaluarDeltaTablero(t);
-          const { qCurGiro, matCurGiro } = evaluarGiroTableroAtTime(
-            t,
-            tieneRotacion,
-            qGiro,
-            tRotStart,
-            tRotEnd
-          );
+          const { qCurGiro, matCurGiro } = evaluarGiroTablero(t);
 
           // 📐 Posición y orientación 100% fiel y rígida alrededor del centro de masa del tablero
-          const vOffsetRot = tieneRotacion ? vOffsetCentro.clone().applyMatrix4(matCurGiro) : vOffsetCentro;
+          const tieneRotEfectiva = tieneRotacion || (tablero.keyframesRot && tablero.keyframesRot.length > 0);
+          const vOffsetRot = tieneRotEfectiva
+            ? vOffsetCentro.clone().applyMatrix4(matCurGiro)
+            : vOffsetCentro;
           const p = centroTableroLocal.clone().add(deltaTab).add(vOffsetRot);
           pVals.push(p.x, p.y, p.z);
 
-          if (tieneRotacion) {
+          if (tieneRotEfectiva) {
             const qCur = qCurGiro.clone().multiply(qRest);
             qVals.push(qCur.x, qCur.y, qCur.z, qCur.w);
           }
@@ -766,116 +919,44 @@ export function compilarMultiplePlusPaso(
       const qGiro = new THREE.Quaternion().setFromEuler(eulerGiro);
       const matGiro = new THREE.Matrix4().makeRotationFromEuler(eulerGiro);
 
-      // Re-resolver evaluador del tablero para sus herrajes
-      const masterConf = resolverMasterConfigParaTablero(t, capa);
-      const vMaster = masterConf ? masterConf.vOffset : new THREE.Vector3(0, 0, 0);
-      const tieneMasterOffset = masterConf !== null && vMaster.lengthSq() > 0.00001;
+      // 📐 Resolver evaluador cinemático del tablero para sus herrajes (100% Sincronizado)
+      const resHw = resolverEvaluadorDeltaTablero(t, capa);
+      const evalDelta = resHw.evalDelta;
+      let timesTab = [...resHw.pTimes];
+      const tLlegadaTabFinal = resHw.tLlegadaFinal;
+      const tRotStart = resHw.tRotStart;
 
-      let esLaPropiaMaster = false;
-      let esHijaDelMaster = false;
-      const destLowTabH = (t.destinoId || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-
-      if (tieneMasterOffset && masterConf) {
-        const mId = masterConf.masterId;
-        if (sonMismoTableroOInstancia(tLow, mId)) {
-          // Solo es la propia master si NO apunta a otra pieza externa como destino
-          if (!destLowTabH || destLowTabH === "base_master") {
-            esLaPropiaMaster = true;
-          } else {
-            esLaPropiaMaster = false;
-          }
-        } else if (sonMismoTableroOInstancia(destLowTabH, mId)) {
-          esHijaDelMaster = true;
-        } else if (capa.piezaMaster && sonMismoTableroOInstancia(capa.piezaMaster, mId) && (!destLowTabH || destLowTabH === "base_master")) {
-          esHijaDelMaster = true;
-        } else {
-          esHijaDelMaster = false;
-        }
-      }
-
-      const offX = (t.offsetXCm || 0) / 100;
-      const offY = (t.offsetYCm || 0) / 100;
-      const offZ = (t.offsetZCm || 0) / 100;
-      const vElevLocal = calcularVectorElevacionLocal(t.elevacionZCm);
-      const vPropio = new THREE.Vector3(offX, offY, offZ).add(vElevLocal);
-      const tieneOffsetPropio = vPropio.lengthSq() > 0.00001;
-      const tInicioMov = typeof t.tiempoInicioMovimiento === "number" ? t.tiempoInicioMovimiento : 500;
-
-      // 📐 Resolver posición de llegada (destino) del tablero para sus herrajes
-      let vLlegadaTab = new THREE.Vector3(0, 0, 0);
-      if (destLowTabH && destLowTabH !== "base_master") {
-        const tabDest = (capa.tableros || []).find((tb) => sonMismoTableroOInstancia(tb.id, destLowTabH));
-        if (tabDest) {
-          const dOffX = (tabDest.offsetXCm || 0) / 100;
-          const dOffY = (tabDest.offsetYCm || 0) / 100;
-          const dOffZ = (tabDest.offsetZCm || 0) / 100;
-          const dElev = calcularVectorElevacionLocal(tabDest.elevacionZCm);
-          vLlegadaTab.set(dOffX, dOffY, dOffZ).add(dElev);
-        }
-      }
-
-      let evalDelta: (time: number) => THREE.Vector3;
-      let timesTab: number[] = [];
-      let tLlegadaTabFinal = duracionPaso;
-
-      if (!tieneMasterOffset || (!esLaPropiaMaster && !esHijaDelMaster)) {
-        if (tInicioMov >= duracionPaso || vPropio.distanceToSquared(vLlegadaTab) <= 0.00001) {
-          evalDelta = (_time: number) => (tieneOffsetPropio ? vPropio.clone() : vLlegadaTab.clone());
-          timesTab = [0, duracionPaso];
-        } else {
-          const distViaje = vPropio.distanceTo(vLlegadaTab);
-          const tViaje = Math.max(0.2, distViaje > 0.001 ? distViaje / velocidadTablerosM_s : 0.5);
-          const tLlegada = Math.min(duracionPaso, tInicioMov + tViaje);
-          tLlegadaTabFinal = tLlegada;
-          evalDelta = (time: number) => {
-            if (time <= tInicioMov) return vPropio.clone();
-            if (time >= tLlegada) return vLlegadaTab.clone();
-            const alpha = (time - tInicioMov) / Math.max(0.001, tLlegada - tInicioMov);
-            return vPropio.clone().lerp(vLlegadaTab, alpha);
-          };
-          timesTab = [0, tInicioMov, tLlegada, duracionPaso];
-        }
-      } else if (esLaPropiaMaster) {
-        const tAcople = (typeof t.tiempoInicioMovimiento === "number" && t.tiempoInicioMovimiento < duracionPaso)
-          ? t.tiempoInicioMovimiento
-          : masterConf!.tAcople;
-        const distV = vMaster.length();
-        const durAcople = Math.max(0.2, distV > 0.001 ? distV / velocidadTablerosM_s : masterConf!.duracionAcople);
-        const tFinAcople = Math.min(duracionPaso, tAcople + durAcople);
-        tLlegadaTabFinal = tFinAcople;
-        evalDelta = (time: number) => {
-          if (time <= tAcople) return vMaster.clone();
-          if (time >= tFinAcople) return new THREE.Vector3(0, 0, 0);
-          const alpha = (time - tAcople) / Math.max(0.001, tFinAcople - tAcople);
-          return vMaster.clone().lerp(new THREE.Vector3(0, 0, 0), alpha);
-        };
-        timesTab = [0, tAcople, tFinAcople, duracionPaso];
-      } else {
-        // Hija del Master (vPropio ya es el vector directo al piso guardado por el posicionador)
-        const vDeltaEspera = tieneOffsetPropio ? vPropio.clone() : new THREE.Vector3(0, 0, 0);
-        const distViaje = vDeltaEspera.distanceTo(vMaster);
-        const tViaje = Math.max(0.2, distViaje > 0.001 ? distViaje / velocidadTablerosM_s : 0.5);
-        const tLlegada = Math.min(masterConf!.tAcople, tInicioMov + tViaje);
-        tLlegadaTabFinal = tLlegada;
-        const tAcople = masterConf!.tAcople;
-        const tFinAcople = masterConf!.tFinAcople;
-
-        evalDelta = (time: number) => {
-          if (time <= tInicioMov) return vDeltaEspera.clone();
-          if (time < tLlegada) {
-            const alpha = (time - tInicioMov) / Math.max(0.001, tLlegada - tInicioMov);
-            return vDeltaEspera.clone().lerp(vMaster, alpha);
-          }
-          if (time <= tAcople) return vMaster.clone();
-          if (time >= tFinAcople) return new THREE.Vector3(0, 0, 0);
-          const alpha = (time - tAcople) / Math.max(0.001, tFinAcople - tAcople);
-          return vMaster.clone().lerp(new THREE.Vector3(0, 0, 0), alpha);
-        };
-        timesTab = [0, tInicioMov, tLlegada, tAcople, tFinAcople, duracionPaso];
-      }
-
-      const tRotStart = esLaPropiaMaster ? (masterConf?.tAcople ?? tInicioMov) : tInicioMov;
       const tRotEnd = tLlegadaTabFinal;
+
+      let evaluarGiroTablero = (_time: number) => resolverRotacionTotalTablero(qGiro, 0, 0, 0);
+      if (t.keyframesRot && t.keyframesRot.length > 0) {
+        const kfRot = [...t.keyframesRot].sort((a, b) => a.t - b.t);
+        timesTab = Array.from(new Set([...timesTab, ...kfRot.map((k) => k.t)])).sort((a, b) => a - b);
+        evaluarGiroTablero = (time: number) => {
+          if (kfRot.length === 1 || time <= kfRot[0].t) {
+            const k = kfRot[0];
+            return resolverRotacionTotalTablero(qGiro, k.rx || 0, k.ry || 0, k.rz || 0);
+          }
+          const lastIdx = kfRot.length - 1;
+          if (time >= kfRot[lastIdx].t) {
+            const k = kfRot[lastIdx];
+            return resolverRotacionTotalTablero(qGiro, k.rx || 0, k.ry || 0, k.rz || 0);
+          }
+          for (let i = 0; i < kfRot.length - 1; i++) {
+            const tA = kfRot[i].t;
+            const tB = kfRot[i + 1].t;
+            if (time >= tA && time <= tB) {
+              const alpha = (time - tA) / Math.max(0.0001, tB - tA);
+              const rx = THREE.MathUtils.lerp(kfRot[i].rx || 0, kfRot[i + 1].rx || 0, alpha);
+              const ry = THREE.MathUtils.lerp(kfRot[i].ry || 0, kfRot[i + 1].ry || 0, alpha);
+              const rz = THREE.MathUtils.lerp(kfRot[i].rz || 0, kfRot[i + 1].rz || 0, alpha);
+              return resolverRotacionTotalTablero(qGiro, rx, ry, rz);
+            }
+          }
+          const k = kfRot[lastIdx];
+          return resolverRotacionTotalTablero(qGiro, k.rx || 0, k.ry || 0, k.rz || 0);
+        };
+      }
 
       // 📐 Si el tablero rota, sub-muestrear los tiempos para sincronizar rígidamente sus herrajes
       if (tieneRotacion && tRotEnd > tRotStart) {
@@ -900,6 +981,7 @@ export function compilarMultiplePlusPaso(
         rotacionGrados: t.rotacionGrados,
         tiempoInicioMovimiento: t.tiempoInicioMovimiento,
         evaluarDelta: evalDelta,
+        evaluarGiro: evaluarGiroTablero,
         pTimes: timesTab,
         centroLocal: centroTableroLocal,
         qGiro: qGiro,
@@ -952,9 +1034,23 @@ export function compilarMultiplePlusPaso(
 
         const tAparicion = Math.max(0, herraje.tiempoAparicion || 0);
 
+        // 🌀 Recuperar Cinemática de Familia Global (Pop, Escala %, Distancia y Giro)
+        const famHw = herraje.id.replace(/^RH_OUT:/i, "").replace(/\s*\(\d+\)$/, "").trim();
+        const famConfig = capa.cinematicasHerrajes?.[famHw];
+        const famLow = famHw.toLowerCase();
+        const esCorredera = famLow.includes("corrediça") || famLow.includes("trilho") || famLow.includes("corredera");
+        const esTornillo = famLow.includes("parafuso") || famLow.includes("tornillo");
+        const esMinifix = famLow.includes("porca") || famLow.includes("tambor") || famLow.includes("minifix");
+
+        const estiloCurva = famConfig?.estilo || (esMinifix ? "suave" : esTornillo ? "pop" : "firme");
+        const escalaInicialPct = famConfig?.escalaInicialPct ?? (esCorredera ? 100 : esTornillo ? 180 : esMinifix ? 140 : 150);
+        const distanciaGiroMm = famConfig?.distanciaGiroMm ?? (esCorredera ? 0 : esTornillo ? 35 : 0);
+        const gradosGiroTotal = famConfig?.gradosGiroTotal ?? (esCorredera ? 0 : esTornillo ? 820 : esMinifix ? 180 : 0);
+
         // 🎯 Resolver el tablero anfitrión específico para este herraje dentro de la capa
         const tabAnfitrion = resolverTableroAnfitrionHerraje(pHwRestWorld, tablerosCapaRefs);
         const evaluarDeltaHw = tabAnfitrion?.evaluarDelta ?? ((_time: number) => new THREE.Vector3(0, 0, 0));
+        const evaluarGiroHw = tabAnfitrion?.evaluarGiro ?? ((_t: number) => ({ qCurGiro: qIdentitySanitizado.clone(), matCurGiro: new THREE.Matrix4() }));
         const pTimesTablero = tabAnfitrion?.pTimes ?? [0, duracionPaso];
         const tieneRotHw = Boolean(tabAnfitrion?.tieneRotacion);
         const centroTabHw = tabAnfitrion?.centroLocal || new THREE.Vector3();
@@ -969,26 +1065,14 @@ export function compilarMultiplePlusPaso(
         // 🎯 Posición exacta del barreno en el tablero anfitrión a tiempo t:
         const getPosBarrenoAtTime = (t: number): THREE.Vector3 => {
           const deltaTab = evaluarDeltaHw(t);
-          const { matCurGiro } = evaluarGiroTableroAtTime(
-            t,
-            tieneRotHw,
-            qGiroHw,
-            tRotStartTab,
-            tLlegadaTab
-          );
+          const { matCurGiro } = evaluarGiroHw(t);
           const vOffsetRot = tieneRotHw ? vOffsetCentroHw.clone().applyMatrix4(matCurGiro) : vOffsetCentroHw;
           return centroTabHw.clone().add(deltaTab).add(vOffsetRot);
         };
 
         const getQuatHwAtTime = (t: number): THREE.Quaternion => {
           if (!tieneRotHw) return qHwRest.clone();
-          const { qCurGiro } = evaluarGiroTableroAtTime(
-            t,
-            tieneRotHw,
-            qGiroHw,
-            tRotStartTab,
-            tLlegadaTab
-          );
+          const { qCurGiro } = evaluarGiroHw(t);
           return qCurGiro.clone().multiply(qHwRest);
         };
 
@@ -1008,13 +1092,48 @@ export function compilarMultiplePlusPaso(
             scales.push(0, 0, 0);
           }
 
-          const sIni = herraje.escalaInicial ?? 1;
+          const sIni = Math.max(0.1, escalaInicialPct / 100);
           times.push(tVisible);
           scales.push(sIni, sIni, sIni);
 
-          if (sIni !== 1) {
-            const durEscala = herraje.duracionEscalaSegundos ?? 1.0;
+          if (Math.abs(sIni - 1) > 0.01) {
+            const durEscala = Math.max(0.2, herraje.duracionEscalaSegundos ?? 1.0);
             const tScaleEnd = Math.min(duracionPaso, tVisible + durEscala);
+
+            if (estiloCurva === "pop") {
+              // Pop Elástico (Rebote amortiguado)
+              const tBounce1 = tVisible + durEscala * 0.65;
+              if (tBounce1 < tScaleEnd) {
+                times.push(tBounce1);
+                scales.push(0.85, 0.85, 0.85);
+              }
+              const tBounce2 = tVisible + durEscala * 0.82;
+              if (tBounce2 < tScaleEnd) {
+                times.push(tBounce2);
+                scales.push(1.12, 1.12, 1.12);
+              }
+            } else if (estiloCurva === "firme") {
+              // Impacto Firme (Snap)
+              const tSnap = tVisible + durEscala * 0.75;
+              if (tSnap < tScaleEnd) {
+                times.push(tSnap);
+                scales.push(sIni, sIni, sIni);
+              }
+              const tSnapMicro = tVisible + durEscala * 0.90;
+              if (tSnapMicro < tScaleEnd) {
+                times.push(tSnapMicro);
+                scales.push(0.96, 0.96, 0.96);
+              }
+            } else if (estiloCurva === "suave") {
+              // Suave Técnico (Ease-Out)
+              const tMid = tVisible + durEscala * 0.5;
+              if (tMid < tScaleEnd) {
+                const sMid = 1 + (sIni - 1) * 0.25;
+                times.push(tMid);
+                scales.push(sMid, sMid, sMid);
+              }
+            }
+
             times.push(tScaleEnd);
             scales.push(1, 1, 1);
           }
@@ -1033,11 +1152,10 @@ export function compilarMultiplePlusPaso(
         let qValsHw: number[] = [];
 
         if (herraje.congelado) {
-          // ❄️ Herraje congelado: soldado rígidamente al barreno de su tablero en todo instante (cero desfases)
+          // Herraje congelado: soldado rígidamente al barreno de su tablero en todo instante
           const { times: sTimes, scales: sVals } = generarPistasEscalaHw(tAparicion);
           agregarTrack(crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, sTimes, sVals));
 
-          // Posición: 100% fiel y rígida a la transformación del tablero
           const pTimes = pTimesTablero;
           const pVals: number[] = [];
           const qVals: number[] = [];
@@ -1059,7 +1177,7 @@ export function compilarMultiplePlusPaso(
             agregarTrack(crearTrackQuaternionSanitizado(`${hwMesh.uuid}.quaternion`, pTimes, qVals));
           }
         } else {
-          // 🚀 Herraje nuevo: inserción colineal desde Punto A hasta Punto B (barreno)
+          // Herraje nuevo: inserción colineal desde Punto A hasta Punto B (barreno)
           const eje = herraje.ejeAproximacion || "-X";
           const distHwM = (typeof herraje.desplazamientoCm === "number" && herraje.desplazamientoCm > 0)
             ? herraje.desplazamientoCm / 100
@@ -1076,10 +1194,10 @@ export function compilarMultiplePlusPaso(
           const { times: sTimes, scales: sVals } = generarPistasEscalaHw(tHwStart);
           agregarTrack(crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, sTimes, sVals));
 
-          // Sub-muestreo durante la inserción si tiene distancia
+          // Sub-muestreo durante la inserción y giro paramétrico
           const insertionTimes: number[] = [tHwStart, tHwLlegada];
-          if (tHwLlegada > tHwStart && distHwM > 0.005) {
-            const nIns = Math.max(5, Math.ceil((tHwLlegada - tHwStart) / 0.05));
+          if (tHwLlegada > tHwStart && (distHwM > 0.005 || gradosGiroTotal !== 0)) {
+            const nIns = Math.max(15, Math.ceil((tHwLlegada - tHwStart) / 0.03));
             for (let i = 1; i < nIns; i++) {
               insertionTimes.push(tHwStart + (i / nIns) * (tHwLlegada - tHwStart));
             }
@@ -1090,36 +1208,54 @@ export function compilarMultiplePlusPaso(
           const posVals: number[] = [];
           const qVals: number[] = [];
 
+          const distGiroM = Math.max(0, distanciaGiroMm / 1000);
+          const spinAxis = vDirOffsetBase.clone().normalize();
+          if (spinAxis.lengthSq() < 0.001) {
+            spinAxis.set(1, 0, 0);
+          }
+
           posTimes.forEach((time) => {
             const pBarreno = getPosBarrenoAtTime(time);
-            const { matCurGiro } = evaluarGiroTableroAtTime(
-              time,
-              tieneRotHw,
-              qGiroHw,
-              tRotStartTab,
-              tLlegadaTab
-            );
-            // 📐 REGLA CANÓNICA: La cota vertical de altura (+Y / -Y) es perpendicular al banco de trabajo / suelo.
-            // Si el eje es +Y (altura vertical de arriba hacia abajo), vDirOffsetBase es absoluto al banco y no se distorsiona horizontalmente.
-            const vDirRot = (eje === "+Y" || eje === "-Y")
-              ? vDirOffsetBase
-              : (tieneRotHw ? vDirOffsetBase.clone().applyMatrix4(matCurGiro) : vDirOffsetBase);
+            const vDirRot = vDirOffsetBase;
 
+            let alpha = 0;
             if (time <= tHwStart) {
               const pAprox = pBarreno.clone().add(vDirRot);
               posVals.push(pAprox.x, pAprox.y, pAprox.z);
+              alpha = 0;
             } else if (time < tHwLlegada) {
-              const alpha = (time - tHwStart) / Math.max(0.001, tHwLlegada - tHwStart);
+              alpha = (time - tHwStart) / Math.max(0.001, tHwLlegada - tHwStart);
               const pAprox = pBarreno.clone().add(vDirRot);
               const pInterp = pAprox.lerp(pBarreno, alpha);
               posVals.push(pInterp.x, pInterp.y, pInterp.z);
             } else {
               posVals.push(pBarreno.x, pBarreno.y, pBarreno.z);
+              alpha = 1;
             }
 
-            if (tieneRotHw) {
-              const q = getQuatHwAtTime(time);
-              qVals.push(q.x, q.y, q.z, q.w);
+            // Giro colineal procedural de atornillamiento
+            let thetaDeg = 0;
+            if (gradosGiroTotal !== 0) {
+              if (distGiroM > 0.0001) {
+                const distRestanteM = (1 - alpha) * distHwM;
+                if (distRestanteM <= distGiroM) {
+                  const factorSpin = 1 - (distRestanteM / distGiroM);
+                  thetaDeg = gradosGiroTotal * factorSpin;
+                } else {
+                  thetaDeg = 0;
+                }
+              } else {
+                thetaDeg = alpha >= 0.999 ? gradosGiroTotal : 0;
+              }
+            }
+
+            const qBase = getQuatHwAtTime(time);
+            if (thetaDeg !== 0) {
+              const qSpin = new THREE.Quaternion().setFromAxisAngle(spinAxis, THREE.MathUtils.degToRad(thetaDeg));
+              const qFinal = qSpin.multiply(qBase);
+              qVals.push(qFinal.x, qFinal.y, qFinal.z, qFinal.w);
+            } else {
+              qVals.push(qBase.x, qBase.y, qBase.z, qBase.w);
             }
           });
 
@@ -1128,12 +1264,12 @@ export function compilarMultiplePlusPaso(
           qValsHw = qVals;
 
           agregarTrack(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, posTimes, posVals));
-          if (tieneRotHw) {
+          if (tieneRotHw || gradosGiroTotal !== 0) {
             agregarTrack(crearTrackQuaternionSanitizado(`${hwMesh.uuid}.quaternion`, posTimes, qVals));
           }
         }
 
-        // 🌟 Malla de Aura Dorada (Glow Shell) para Babylon.js Sandbox, Blender y Three.js
+                // 🌟 Malla de Aura Dorada (Glow Shell) para Babylon.js Sandbox, Blender y Three.js
         const tieneDestello = Boolean(herraje.destello && (herraje.destello.duracion || 0) > 0);
         const tVisibleHw = herraje.congelado ? tAparicion : tHwStartCalc;
         const tInicioDestello = tieneDestello ? (herraje.destello!.tiempoInicio ?? tVisibleHw) : tVisibleHw;

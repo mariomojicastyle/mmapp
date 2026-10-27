@@ -236,9 +236,9 @@ export function CapsulaHerrajePlus({
             value={textoAparicion}
             onFocus={(e) => {
               setEditandoAparicion(true);
-              const target = e.currentTarget;
-              setTimeout(() => target.select(), 0);
+              e.currentTarget.select();
             }}
+            onClick={(e) => e.currentTarget.select()}
             onBlur={commitAparicion}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -277,9 +277,9 @@ export function CapsulaHerrajePlus({
               value={textoDuracion}
               onFocus={(e) => {
                 setEditandoDuracion(true);
-                const target = e.currentTarget;
-                setTimeout(() => target.select(), 0);
+                e.currentTarget.select();
               }}
+              onClick={(e) => e.currentTarget.select()}
               onBlur={commitDuracion}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -311,9 +311,9 @@ export function CapsulaHerrajePlus({
               value={textoSegundoTitileo}
               onFocus={(e) => {
                 setEditandoSegundoTitileo(true);
-                const target = e.currentTarget;
-                setTimeout(() => target.select(), 0);
+                e.currentTarget.select();
               }}
+              onClick={(e) => e.currentTarget.select()}
               onBlur={commitSegundoTitileo}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {

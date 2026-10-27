@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Sliders, Gauge, Move, RotateCw, RotateCcw, ArrowDown, Feather, Play, Zap, ChevronDown, Eye, EyeOff } from "lucide-react";
+import { Plus, Sliders, Gauge, Move, Zap, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { PasoManualStudio } from "@/lib/storeTypes";
 import { use3BFStore } from "@/lib/store";
 import { CapaMultiplePlusCard } from "./CapaMultiplePlusCard";
@@ -37,18 +37,12 @@ export default function MultiplePlusSection({
     actualizarTableroPlus,
     removerTableroPlus,
     actualizarHerrajePlus,
+    actualizarCinematicaFamiliaPlus,
     removerHerrajePlus,
     toggleCongelarHerrajePlus,
     definirPiezaMasterPlus,
     actualizarOffsetBancoMasterPlus,
     actualizarTiempoAcopleMasterPlus,
-    girarBancoGlobalPlus,
-    toggleApoyoPisoGlobalPlus,
-    toggleAntigravedadPlus,
-    togglePonerDePieAlFinalPlus,
-    setParametrosDePieAlFinalPlus,
-    toggleVolteoIntermedioPlus,
-    setParametrosVolteoIntermedioPlus,
     toggleBloqueHeredadoPlus: toggleBloqueHeredadoCapaPlus,
     toggleVisibilidadBloqueHeredadoPlus: toggleVisibilidadBloqueHeredadoCapaPlus,
     setVelocidadTablerosPlus,
@@ -56,8 +50,6 @@ export default function MultiplePlusSection({
     setMovimientoGlobalPlus,
     toggleColapsarCapaPlus,
     setColapsarTodasCapasPlus,
-    setOffsetEjeRotacionPlus,
-    setAlturaZPlus,
     posicionarHerrajesEnPiezaPlus,
     cargarBloqueFuncionalEnPaso,
     conmutarVisibilidadGrupoCinematico,
@@ -115,14 +107,6 @@ export default function MultiplePlusSection({
     return list;
   }, [capas, gruposCinematicosDisponibles]);
 
-  const rotBanco = pasoActivo.orientacionBanco?.rotacion || [0, 0, 0];
-  const rotX = rotBanco[0] || 0;
-  const rotY = rotBanco[1] || 0;
-  const rotZ = rotBanco[2] || 0;
-  const apoyoEnPiso = pasoActivo.orientacionBanco?.apoyoEnPiso ?? true;
-  const alturaZ = mpConfig.alturaZCm ?? pasoActivo.orientacionBanco?.alturaZCm ?? 0;
-  const antigravedad = mpConfig.antigravedad ?? false;
-
   return (
     <div className="flex flex-col gap-3.5">
       {/* ── BARRA SUPERIOR GLOBAL: 3 SLIDERS DE VELOCIDAD Y MOVIMIENTO ── */}
@@ -148,10 +132,8 @@ export default function MultiplePlusSection({
               min={1}
               max={60}
               value={mpConfig.velocidadTablerosCmS ?? 15}
-              onFocus={(e) => {
-                const t = e.currentTarget;
-                setTimeout(() => t.select(), 0);
-              }}
+              onFocus={(e) => e.currentTarget.select()}
+              onClick={(e) => e.currentTarget.select()}
               onChange={(e) => {
                 const val = parseInt(e.target.value, 10);
                 setVelocidadTablerosPlus(pasoActivo.id, isNaN(val) ? 1 : Math.max(1, val));
@@ -183,10 +165,8 @@ export default function MultiplePlusSection({
               min={1}
               max={80}
               value={mpConfig.velocidadHerrajesCmS ?? 8}
-              onFocus={(e) => {
-                const t = e.currentTarget;
-                setTimeout(() => t.select(), 0);
-              }}
+              onFocus={(e) => e.currentTarget.select()}
+              onClick={(e) => e.currentTarget.select()}
               onChange={(e) => {
                 const val = parseInt(e.target.value, 10);
                 setVelocidadHerrajesPlus(pasoActivo.id, isNaN(val) ? 1 : Math.max(1, val));
@@ -199,8 +179,8 @@ export default function MultiplePlusSection({
 
         {/* Slider 3: Movimiento Global (cm) */}
         <div className="flex items-center gap-2 min-w-[190px] flex-1">
-          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 shrink-0">
-            <Move className="w-3 h-3 text-emerald-500" />
+          <div className="flex items-center gap-1 text-[10px] font-bold text-cyan-700 dark:text-cyan-300 shrink-0">
+            <Move className="w-3 h-3 text-[#0088AA] dark:text-[#38BDF8]" />
             <span>Desplazamiento:</span>
           </div>
           <input
@@ -213,7 +193,7 @@ export default function MultiplePlusSection({
               const val = parseInt(e.target.value, 10);
               setMovimientoGlobalPlus(pasoActivo.id, isNaN(val) ? 0 : Math.max(0, val));
             }}
-            className="w-full accent-emerald-500 cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg"
+            className="w-full accent-[#0088AA] dark:accent-[#38BDF8] cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg"
           />
           <div className="flex items-center gap-0.5 shrink-0">
             <input
@@ -221,15 +201,18 @@ export default function MultiplePlusSection({
               min={0}
               max={200}
               value={mpConfig.movimientoGlobalCm ?? 20}
-              onFocus={(e) => {
-                const t = e.currentTarget;
-                setTimeout(() => t.select(), 0);
-              }}
+              onFocus={(e) => e.currentTarget.select()}
+              onClick={(e) => e.currentTarget.select()}
               onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
+                const raw = e.target.value;
+                if (raw === "") {
+                  setMovimientoGlobalPlus(pasoActivo.id, 0);
+                  return;
+                }
+                const val = parseInt(raw, 10);
                 setMovimientoGlobalPlus(pasoActivo.id, isNaN(val) ? 0 : Math.max(0, val));
               }}
-              className="w-12 px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-mono font-bold text-center text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 shadow-2xs cursor-text"
+              className="w-12 px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-mono font-bold text-center text-slate-800 dark:text-slate-100 outline-none focus:border-[#0088AA] shadow-2xs cursor-text"
             />
             <span className="text-[10px] font-bold text-slate-500">cm</span>
           </div>
@@ -260,430 +243,6 @@ export default function MultiplePlusSection({
               >
                 ▸ Colapsar todas
               </button>
-            </div>
-          )}
-        </div>
-
-        {/* 🧭 Controladores Globales de Rotación de Banco y Suelo */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {/* Giro X -90° */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "X", -90)}
-            title="Girar banco X -90° (Acostar hacia atrás)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotX === -90
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>X-90°</span>
-          </button>
-
-          {/* Giro X +90° */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "X", 90)}
-            title="Girar banco X +90° (Acostar hacia adelante)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotX === 90
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>X+90°</span>
-          </button>
-
-          {/* Giro X 180° */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "X", 180)}
-            title="Girar banco X 180° (Voltear arriba / abajo)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotX === 180 || rotX === -180
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>X 180°</span>
-          </button>
-
-          {/* Giro Y -90° (Roll Longitudinal) */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "Y", -90)}
-            title="Girar banco Y -90° (Roll longitudinal hacia la izquierda)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotY === -90
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Y-90°</span>
-          </button>
-
-          {/* Giro Y +90° */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "Y", 90)}
-            title="Girar banco Y +90° (Roll longitudinal hacia la derecha)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotY === 90
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>Y+90°</span>
-          </button>
-
-          {/* Giro Y 180° */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "Y", 180)}
-            title="Girar banco Y 180° (Voltear de costado / invertido longitudinal)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotY === 180 || rotY === -180
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>Y 180°</span>
-          </button>
-
-          {/* Giro Z -90° (Tornamesa / Yaw en el plano horizontal) */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "Z", -90)}
-            title="Girar banco Z -90° (Rotar horizontal izquierda)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotZ === -90
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Z-90°</span>
-          </button>
-
-          {/* Giro Z +90° */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "Z", 90)}
-            title="Girar banco Z +90° (Rotar horizontal derecha)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotZ === 90
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>Z+90°</span>
-          </button>
-
-          {/* Giro Z 180° */}
-          <button
-            type="button"
-            onClick={() => girarBancoGlobalPlus(pasoActivo.id, "Z", 180)}
-            title="Girar banco Z 180° (Rotar horizontal 180° frente/espalda)"
-            className={`px-3 py-1 rounded-full border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-              rotZ === 180 || rotZ === -180
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>Z 180°</span>
-          </button>
-
-          {/* Apoyar al ras del suelo */}
-          <button
-            type="button"
-            onClick={() => toggleApoyoPisoGlobalPlus(pasoActivo.id)}
-            title="Apoyar la cara inferior en el ras del suelo (Y = 0)"
-            className={`px-3.5 py-1 rounded-full font-bold text-[10px] transition-all cursor-pointer border flex items-center gap-1 shadow-2xs ${
-              apoyoEnPiso
-                ? "bg-[#0088AA] dark:bg-[#0088AA] text-white border-[#0088AA] shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-cyan-400"
-            }`}
-          >
-            <ArrowDown className="w-3 h-3" />
-            <span>Suelo</span>
-          </button>
-
-          {/* 🪶 Neutralizar gravedad / Flotación neutra */}
-          <button
-            type="button"
-            onClick={() => toggleAntigravedadPlus(pasoActivo.id)}
-            title={
-              antigravedad
-                ? "Antigravedad ACTIVA: Las piezas flotan a su altura de ensamble sin caer al suelo. Ideal para fondos de cajón y desplazamientos lineales."
-                : "Activar Antigravedad: Evita que los tableros caigan al suelo al posicionarlos para que viajen 100% horizontales sin diagonales."
-            }
-            className={`px-3.5 py-1 rounded-full font-bold text-[10px] transition-all cursor-pointer border flex items-center gap-1 shadow-2xs ${
-              antigravedad
-                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm ring-1 ring-cyan-400/40"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-cyan-400"
-            }`}
-          >
-            <Feather className="w-3 h-3" />
-            <span>Antigravedad</span>
-          </button>
-
-          {/* 📏 Altura en Z (cm) */}
-          <div
-            title="Control de elevación vertical en Z respecto al suelo / banco de trabajo"
-            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 shadow-2xs"
-          >
-            <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400">Altura Z:</span>
-            <input
-              type="number"
-              min={-100}
-              max={300}
-              step={1}
-              value={alturaZ}
-              onFocus={(e) => {
-                const t = e.currentTarget;
-                setTimeout(() => t.select(), 0);
-              }}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setAlturaZPlus(pasoActivo.id, isNaN(val) ? 0 : val);
-              }}
-              className="w-10 px-1 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-[10px] font-mono font-bold text-center text-slate-800 dark:text-slate-100 outline-none focus:border-cyan-500 shadow-2xs cursor-text"
-            />
-            <span className="text-[9.5px] font-bold text-slate-500">cm</span>
-          </div>
-
-          {/* 🎯 Elevación / Desplazamiento Eje CDG (cm) */}
-          <div
-            title="Ajuste vertical / elevación del eje de rotación respecto al Centro de Gravedad"
-            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 shadow-2xs"
-          >
-            <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400">Eje CDG:</span>
-            <input
-              type="number"
-              min={-100}
-              max={200}
-              step={1}
-              value={mpConfig.offsetEjeRotacionCm ?? 30}
-              onFocus={(e) => {
-                const t = e.currentTarget;
-                setTimeout(() => t.select(), 0);
-              }}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setOffsetEjeRotacionPlus(pasoActivo.id, isNaN(val) ? 0 : val);
-              }}
-              className="w-10 px-1 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-[10px] font-mono font-bold text-center text-slate-800 dark:text-slate-100 outline-none focus:border-cyan-500 shadow-2xs cursor-text"
-            />
-            <span className="text-[9.5px] font-bold text-slate-500">cm</span>
-          </div>
-
-          {/* 🌟 CÁPSULA DINÁMICA: VOLTEO 180° INTERMEDIO (ANIMADO) 🌟 */}
-          {!mpConfig.volteoIntermedio?.activo ? (
-            <button
-              type="button"
-              onClick={() => toggleVolteoIntermedioPlus(pasoActivo.id)}
-              title="Activar giro / volteo animado de 180° a mitad del paso sin retorno para armar partes inferiores"
-              className="px-3.5 py-1 rounded-full font-bold text-[10px] transition-all cursor-pointer border flex items-center gap-1.5 shadow-2xs bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-400"
-            >
-              <RotateCw className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
-              <span>Volteo 180°</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full border border-cyan-400 dark:border-cyan-500/80 bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-900 dark:text-cyan-100 shadow-xs transition-all">
-              <button
-                type="button"
-                onClick={() => toggleVolteoIntermedioPlus(pasoActivo.id)}
-                title="Haga clic para desactivar el volteo 180°"
-                className="flex items-center gap-1 font-bold text-[10px] cursor-pointer hover:opacity-80 text-cyan-700 dark:text-cyan-300"
-              >
-                <RotateCw className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
-                <span>Volteo 180°</span>
-              </button>
-
-              <div className="flex items-center gap-1.5 pl-2 border-l border-cyan-400/50 dark:border-cyan-500/40 text-[9px]">
-                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300">Eje:</span>
-                <select
-                  value={mpConfig.volteoIntermedio.eje || "Y"}
-                  onChange={(e) => {
-                    setParametrosVolteoIntermedioPlus(pasoActivo.id, { eje: e.target.value as "X" | "Y" | "Z" });
-                  }}
-                  title="Eje de giro en coordenadas de taller (Y: Roll longitudinal, X: Transversal, Z: Horizontal)"
-                  className="bg-white dark:bg-slate-800 border border-cyan-300 dark:border-cyan-600/70 rounded-full px-1.5 py-0.5 font-bold font-mono text-[9px] text-cyan-900 dark:text-cyan-100 outline-none cursor-pointer shadow-2xs"
-                >
-                  <option value="Y">Y (Roll)</option>
-                  <option value="X">X (Frontal)</option>
-                  <option value="Z">Z (Horizontal)</option>
-                </select>
-
-                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300 ml-0.5">Inicio:</span>
-                <div className="inline-flex items-center bg-white dark:bg-slate-800 border border-cyan-300 dark:border-cyan-600/70 rounded-full px-1.5 py-0.5 shadow-2xs">
-                  <input
-                    type="number"
-                    value={mpConfig.volteoIntermedio.tiempoInicio ?? 48}
-                    min={0}
-                    max={600}
-                    step={1}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setParametrosVolteoIntermedioPlus(pasoActivo.id, { tiempoInicio: val });
-                      }
-                    }}
-                    title="Segundo exacto en que inicia el giro de volteo"
-                    className="w-8 text-center font-mono font-bold text-[9.5px] bg-transparent outline-none cursor-text text-slate-800 dark:text-slate-100"
-                  />
-                  <span className="text-[7.5px] font-mono font-bold text-slate-400 select-none">s</span>
-                </div>
-
-                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300 ml-0.5">Dur:</span>
-                <div className="inline-flex items-center bg-white dark:bg-slate-800 border border-cyan-300 dark:border-cyan-600/70 rounded-full px-1.5 py-0.5 shadow-2xs">
-                  <input
-                    type="number"
-                    value={mpConfig.volteoIntermedio.duracion ?? 3.0}
-                    min={0.5}
-                    max={30}
-                    step={0.5}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setParametrosVolteoIntermedioPlus(pasoActivo.id, { duracion: val });
-                      }
-                    }}
-                    title="Duración en segundos del giro de volteo"
-                    className="w-7 text-center font-mono font-bold text-[9.5px] bg-transparent outline-none cursor-text text-slate-800 dark:text-slate-100"
-                  />
-                  <span className="text-[7.5px] font-mono font-bold text-slate-400 select-none">s</span>
-                </div>
-
-                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300 ml-0.5">Eje Z:</span>
-                <div className="inline-flex items-center bg-white dark:bg-slate-800 border border-cyan-300 dark:border-cyan-600/70 rounded-full px-1.5 py-0.5 shadow-2xs">
-                  <input
-                    type="number"
-                    value={mpConfig.volteoIntermedio.alturaEjeZCm ?? mpConfig.offsetEjeRotacionCm ?? 30}
-                    step={1}
-                    min={-100}
-                    max={200}
-                    onFocus={(e) => {
-                      const t = e.currentTarget;
-                      setTimeout(() => t.select(), 0);
-                    }}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setParametrosVolteoIntermedioPlus(pasoActivo.id, { alturaEjeZCm: val });
-                      }
-                    }}
-                    title="Altura del eje de rotación en Z (cm) respecto al centro del mueble"
-                    className="w-8 text-center font-mono font-bold text-[9.5px] bg-transparent outline-none cursor-text text-slate-800 dark:text-slate-100"
-                  />
-                  <span className="text-[7.5px] font-mono font-bold text-slate-400 select-none">cm</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const tInicio = mpConfig.volteoIntermedio?.tiempoInicio ?? 48;
-                    const tArrancada = Math.max(0, tInicio - 0.5);
-                    setTimelineCurrentTime(tArrancada);
-                    setIsTimelinePlaying(true);
-                  }}
-                  title="Saltar a la maniobra y reproducir el volteo de 180°"
-                  className="ml-0.5 px-2.5 py-0.5 rounded-full bg-[#0088AA] dark:bg-[#1368AA] hover:opacity-90 active:scale-95 text-white font-bold text-[8.5px] shadow-2xs cursor-pointer flex items-center gap-1 transition"
-                >
-                  <Play className="w-2.5 h-2.5 fill-current" />
-                  <span>Probar</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 🌟 CÁPSULA DINÁMICA: DE PIE AL FINAL 🌟 */}
-          {!mpConfig.ponerDePieAlFinal ? (
-            <button
-              type="button"
-              onClick={() => togglePonerDePieAlFinalPlus(pasoActivo.id)}
-              title="Animar puesta de pie del mueble al terminar el armado"
-              className="px-3.5 py-1 rounded-full font-bold text-[10px] transition-all cursor-pointer border flex items-center gap-1.5 shadow-2xs bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400"
-            >
-              <RotateCw className="w-3 h-3 text-amber-500" />
-              <span>De pie al final</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full border border-amber-400 dark:border-amber-500/80 bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200 shadow-xs transition-all">
-              <button
-                type="button"
-                onClick={() => togglePonerDePieAlFinalPlus(pasoActivo.id)}
-                title="Haga clic para desactivar la puesta de pie"
-                className="flex items-center gap-1 font-bold text-[10px] cursor-pointer hover:opacity-80 text-amber-700 dark:text-amber-300"
-              >
-                <RotateCw className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                <span>De pie</span>
-              </button>
-
-              <div className="flex items-center gap-1.5 pl-2 border-l border-amber-400/50 dark:border-amber-500/40 text-[9px]">
-                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300">Inicio:</span>
-                <div className="inline-flex items-center bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-600/70 rounded-full px-1.5 py-0.5 shadow-2xs">
-                  <input
-                    type="number"
-                    value={mpConfig.tiempoInicioDePie ?? Math.max(0, (pasoActivo.duracionTotal || 10) - 4)}
-                    min={0}
-                    max={600}
-                    step={1}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setParametrosDePieAlFinalPlus(pasoActivo.id, { tiempoInicio: val });
-                      }
-                    }}
-                    title="Segundo exacto en que inicia el giro de puesta de pie"
-                    className="w-10 text-center font-mono font-bold text-[9.5px] bg-transparent outline-none cursor-text text-slate-800 dark:text-slate-100"
-                  />
-                  <span className="text-[7.5px] font-mono font-bold text-slate-400 dark:text-slate-400 select-none">s</span>
-                </div>
-
-                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300 ml-0.5">Dur:</span>
-                <div className="inline-flex items-center bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-600/70 rounded-full px-1.5 py-0.5 shadow-2xs">
-                  <input
-                    type="number"
-                    value={mpConfig.duracionDePie ?? 4.0}
-                    min={0.5}
-                    max={30}
-                    step={0.5}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setParametrosDePieAlFinalPlus(pasoActivo.id, { duracion: val });
-                      }
-                    }}
-                    title="Duración en segundos del giro de levantamiento"
-                    className="w-8 text-center font-mono font-bold text-[9.5px] bg-transparent outline-none cursor-text text-slate-800 dark:text-slate-100"
-                  />
-                  <span className="text-[7.5px] font-mono font-bold text-slate-400 dark:text-slate-400 select-none">s</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const tInicio = mpConfig.tiempoInicioDePie ?? Math.max(0, (pasoActivo.duracionTotal || 10) - 4);
-                    const tArrancada = Math.max(0, tInicio - 0.5);
-                    setTimelineCurrentTime(tArrancada);
-                    setIsTimelinePlaying(true);
-                  }}
-                  title="Saltar a la maniobra y reproducir el levantamiento"
-                  className="ml-0.5 px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[8.5px] shadow-2xs cursor-pointer flex items-center gap-1 transition"
-                >
-                  <Play className="w-2.5 h-2.5 fill-current" />
-                  <span>Probar</span>
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -880,6 +439,7 @@ export default function MultiplePlusSection({
               onActualizarTablero={(cId, tId, partial) => actualizarTableroPlus(pasoActivo.id, cId, tId, partial)}
               onRemoverTablero={(cId, tId) => removerTableroPlus(pasoActivo.id, cId, tId)}
               onActualizarHerraje={(cId, hId, partial) => actualizarHerrajePlus(pasoActivo.id, cId, hId, partial)}
+              onActualizarCinematicaFamilia={actualizarCinematicaFamiliaPlus}
               onRemoverHerraje={(cId, hId) => removerHerrajePlus(pasoActivo.id, cId, hId)}
               onToggleCongelarHerraje={(cId, hId) => toggleCongelarHerrajePlus(pasoActivo.id, cId, hId)}
               onDefinirMaster={(cId, pNombre) => definirPiezaMasterPlus(pasoActivo.id, cId, pNombre)}

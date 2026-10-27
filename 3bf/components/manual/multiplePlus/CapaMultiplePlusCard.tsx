@@ -1,5 +1,7 @@
 "use client";
 
+import { CinematicasHerrajesGlobal } from "./CinematicasHerrajesGlobal";
+
 import React, { useState, useMemo, useRef } from "react";
 import {
   Layers,
@@ -17,6 +19,7 @@ import {
   Link2,
   LocateFixed,
   Check,
+  Compass,
 } from "lucide-react";
 import { CapaMultiplePlus, PasoManualStudio, TableroCapaPlus, HerrajeCapaPlus, OffsetBancoCm } from "@/lib/storeTypes";
 import { use3BFStore } from "@/lib/store";
@@ -58,6 +61,7 @@ interface CapaMultiplePlusCardProps {
   onToggleVisibilidadBloqueHeredado: (capaId: string, bloqueId: string) => void;
   onInvertirSeleccion: () => void;
   onPosicionarHerrajesEnPieza?: (capaId: string) => void;
+  onActualizarCinematicaFamilia?: (pasoId: string, capaId: string, familia: string, partial: any) => void;
 }
 
 export function CapaMultiplePlusCard({
@@ -94,11 +98,13 @@ export function CapaMultiplePlusCard({
   onToggleVisibilidadBloqueHeredado,
   onInvertirSeleccion,
   onPosicionarHerrajesEnPieza,
+  onActualizarCinematicaFamilia,
 }: CapaMultiplePlusCardProps) {
   const conmutarVisibilidadGrupoCinematico = use3BFStore((s: any) => s.conmutarVisibilidadGrupoCinematico);
   const actualizarCapaPromptPlus = use3BFStore((s: any) => s.actualizarCapaPromptPlus);
   const toggleMinimizarCapaPromptPlus = use3BFStore((s: any) => s.toggleMinimizarCapaPromptPlus);
   const limpiarCinematicaCapaPlus = use3BFStore((s: any) => s.limpiarCinematicaCapaPlus);
+  const fijarPoseBancoCapaPlus = use3BFStore((s: any) => s.fijarPoseBancoCapaPlus);
   const [copiadoPrompt, setCopiadoPrompt] = useState(false);
   const [limpiadoCinematica, setLimpiadoCinematica] = useState(false);
 
@@ -528,15 +534,19 @@ export function CapaMultiplePlusCard({
           {/* ── FILA 2: TABLEROS ASIGNADOS A LA CAPA ── */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
-            <Layers className="w-3 h-3 text-amber-500" />
-            Tableros ({capa.tableros.length}):
-          </span>
-          {capa.tableros.length === 0 && (
-            <span className="text-[9px] text-slate-400 italic">
-              Activa el bombillo y toca tableros en el visor 3D para añadirlos
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+              <Layers className="w-3 h-3 text-amber-500" />
+              Tableros ({capa.tableros.length}):
             </span>
-          )}
+            {capa.tableros.length === 0 && (
+              <span className="text-[9px] text-slate-400 italic">
+                Activa el bombillo y toca tableros en el visor 3D para añadirlos
+              </span>
+            )}
+          </div>
+
+          
         </div>
 
         {/* 📦 Contenedor dinámico de tableros con altura ajustable */}
@@ -590,6 +600,13 @@ export function CapaMultiplePlusCard({
         )}
       </div>
 
+      {/* ── SECCIÓN GLOBAL: CINEMÁTICAS HERRAJES (ARRIBA DE HERRAJES) ── */}
+      <CinematicasHerrajesGlobal
+        capa={capa}
+        pasoId={paso.id}
+        onActualizarCinematicaFamilia={onActualizarCinematicaFamilia}
+      />
+
       {/* ── FILA 3: HERRAJES ASIGNADOS A LA CAPA ── */}
       <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
         <div className="flex items-center justify-between gap-2">
@@ -623,8 +640,40 @@ export function CapaMultiplePlusCard({
                 )}
               </button>
             )}
+
+            {/* 🧭 Cápsula de Asignación Masiva de Ejes (1 Clic para toda la capa) */}
+            {capa.herrajes.length > 0 && (
+              <div
+                className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5 shadow-2xs text-[8.5px]"
+                title="Cambiar el eje de aproximación de todos los herrajes de esta capa con un solo clic"
+              >
+                <Compass className="w-2.5 h-2.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                <span className="font-bold text-slate-500 dark:text-slate-400">Todos a:</span>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const nuevoEje = e.target.value as any;
+                    if (!nuevoEje) return;
+                    capa.herrajes.forEach((hw) => {
+                      onActualizarHerraje(capa.id, hw.id, { ejeAproximacion: nuevoEje });
+                    });
+                  }}
+                  className="bg-transparent font-mono font-bold text-cyan-700 dark:text-cyan-300 outline-none cursor-pointer text-[8.5px]"
+                >
+                  <option value="">Eje...</option>
+                  <option value="+Z">+Z (Arriba)</option>
+                  <option value="-Z">-Z (Abajo)</option>
+                  <option value="+X">+X (Derecha)</option>
+                  <option value="-X">-X (Izquierda)</option>
+                  <option value="+Y">+Y (Fondo)</option>
+                  <option value="-Y">-Y (Frente)</option>
+                </select>
+              </div>
+            )}
           </div>
         </div>
+
+
 
         {/* 📦 Contenedor dinámico de herrajes con altura ajustable y rigidez estructural (mínimo 320px por cápsula) */}
         <div

@@ -4,7 +4,7 @@
   "nombre": "X-Manual",
   "marca": "Henn",
   "tipologia": "CÔMODA",
-  "fechaModificacion": "2026-10-24T04:06:10.717Z",
+  "fechaModificacion": "2026-10-27T03:09:30.960Z",
   "parametrosMueble": {
     "model_id": "Comoda Ravenna",
     "custom_filename": "Comodas/Comoda Ravenna.ghx",
@@ -627,7 +627,7 @@
       "versionMotor": "v1.0",
       "titulo": "P02",
       "descripcion": "Nuevo paso de ensamble",
-      "duracionTotal": 16.0,
+      "duracionTotal": 80,
       "piezaMaster": "",
       "orientacionBanco": {
         "rotacion": [
@@ -679,17 +679,25 @@
         "Corrediça - Fixa (8)",
         "Parafuso E (48)",
         "Corrediça - Fixa (12)",
-        "Parafuso E (72)"
+        "Parafuso E (72)",
+        "Cavilha (77)",
+        "Cavilha (51)",
+        "Cavilha (81)",
+        "Cavilha (48)",
+        "Cavilha (78)",
+        "Cavilha (52)",
+        "Cavilha (82)",
+        "Cavilha (45)"
       ],
       "secuencia": [],
       "subbloques": [],
       "piezasOcultas": false,
-      "ocultarNoAsignadas": false,
+      "ocultarNoAsignadas": true,
       "multiplePlus": {
         "velocidadTablerosCmS": 15,
         "velocidadHerrajesCmS": 8,
-        "movimientoGlobalCm": 0,
-        "modoVisualizacionInactivos": "global",
+        "movimientoGlobalCm": 20,
+        "modoVisualizacionInactivos": "oculto",
         "capas": [
           {
             "id": "capa_plus_1792782825907_1",
@@ -709,7 +717,23 @@
                   90,
                   90
                 ],
-                "elevacionZCm": -47.6
+                "elevacionZCm": -47.6,
+                "keyframesPos": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                  }
+                ],
+                "keyframesRot": [
+                  {
+                    "t": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "rz": 0
+                  }
+                ]
               },
               {
                 "id": "Peça 6",
@@ -724,7 +748,59 @@
                   90,
                   90
                 ],
-                "elevacionZCm": -51.9
+                "elevacionZCm": -51.9,
+                "keyframesRot": [
+                  {
+                    "t": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "rz": 0
+                  },
+                  {
+                    "t": 44,
+                    "rx": 0,
+                    "ry": 0,
+                    "rz": 0
+                  },
+                  {
+                    "t": 46,
+                    "rx": 0,
+                    "ry": 180,
+                    "rz": 0
+                  }
+                ],
+                "keyframesPos": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                  },
+                  {
+                    "t": 42,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                  },
+                  {
+                    "t": 44,
+                    "x": 0,
+                    "y": 0,
+                    "z": 30
+                  },
+                  {
+                    "t": 46,
+                    "x": 0,
+                    "y": 0,
+                    "z": 30
+                  },
+                  {
+                    "t": 48,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                  }
+                ]
               },
               {
                 "id": "Peça 7",
@@ -739,294 +815,537 @@
                   -90,
                   0
                 ],
-                "elevacionZCm": -47.6
+                "elevacionZCm": -47.6,
+                "keyframesPos": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                  }
+                ],
+                "keyframesRot": [
+                  {
+                    "t": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "rz": 0
+                  }
+                ]
               }
             ],
             "herrajes": [
               {
                 "id": "Parafuso E (61)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 11.0,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 9,
                 "congelado": false,
-                "escalaInicial": 2.0,
-                "duracionEscalaSegundos": 1.0,
-                "desplazamientoCm": 30
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 9,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (25)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 11.0,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 10,
                 "congelado": false,
-                "escalaInicial": 2.0,
-                "duracionEscalaSegundos": 1.0,
-                "desplazamientoCm": 30
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 10,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (1)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 0.5,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 2,
                 "congelado": false,
-                "desplazamientoCm": 30,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 2,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (31)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 6.5,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 12,
                 "congelado": false,
-                "escalaInicial": 2.0,
-                "duracionEscalaSegundos": 1.0,
-                "desplazamientoCm": 30
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 12,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (65)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 6.5,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 11,
                 "congelado": false,
-                "escalaInicial": 2.0,
-                "duracionEscalaSegundos": 1.0,
-                "desplazamientoCm": 30
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 11,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (5)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 5.0,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 4,
                 "congelado": false,
                 "escalaInicial": 1,
-                "desplazamientoCm": 30
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 4,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (38)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 2.0,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 13,
                 "congelado": false,
-                "escalaInicial": 2.0,
-                "duracionEscalaSegundos": 1.0,
-                "desplazamientoCm": 30
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 13,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (69)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 2.0,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 12,
                 "congelado": false,
-                "escalaInicial": 2.0,
-                "duracionEscalaSegundos": 1.0,
-                "desplazamientoCm": 30
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 12,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (9)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 9.5,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 6,
                 "congelado": false,
                 "escalaInicial": 1,
-                "desplazamientoCm": 30
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 6,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (62)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 22,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 22,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (28)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 21,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 21,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (2)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 16,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 16,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (66)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 24,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "duracion": 0,
+                  "tiempoInicio": 24
+                }
               },
               {
                 "id": "Parafuso E (35)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 23,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 23,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (6)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 18,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "duracion": 0,
+                  "tiempoInicio": 18
+                }
               },
               {
                 "id": "Parafuso E (63)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 56,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 56,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (41)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 57,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 57,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (3)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 50,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 50,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (67)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 58,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 58,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (42)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 59,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 59,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (7)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 52,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 52,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (44)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 25,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 25,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (10)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 20,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 20,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (70)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 26,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 26,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (71)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 60,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "duracion": 0,
+                  "tiempoInicio": 60
+                }
               },
               {
                 "id": "Parafuso E (45)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 61,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 61,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (11)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 54,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 54,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (34)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 35,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 35,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (64)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 36,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 36,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (4)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 30,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 30,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (43)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 37,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 37,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (68)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 38,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 38,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (8)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 32,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 32,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (48)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 39,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 39,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Corrediça - Fixa (12)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 34,
                 "congelado": false,
-                "escalaInicial": 1
+                "escalaInicial": 1,
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 34,
+                  "duracion": 0
+                }
               },
               {
                 "id": "Parafuso E (72)",
-                "ejeAproximacion": "+Y",
-                "tiempoAparicion": 999,
+                "ejeAproximacion": "+Z",
+                "tiempoAparicion": 40,
                 "congelado": false,
                 "escalaInicial": 1,
-                "duracionEscalaSegundos": 1
+                "duracionEscalaSegundos": 1,
+                "destello": {
+                  "tiempoInicio": 40,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (77)",
+                "ejeAproximacion": "-Y",
+                "tiempoAparicion": 63,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 63,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (51)",
+                "ejeAproximacion": "-Y",
+                "tiempoAparicion": 62,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 62,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (81)",
+                "ejeAproximacion": "-Y",
+                "tiempoAparicion": 65,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 65,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (48)",
+                "ejeAproximacion": "-Y",
+                "tiempoAparicion": 64,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 64,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (78)",
+                "ejeAproximacion": "-Y",
+                "tiempoAparicion": 66,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 66,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (52)",
+                "ejeAproximacion": "-Y",
+                "tiempoAparicion": 67,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 67,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (82)",
+                "ejeAproximacion": "+Y",
+                "tiempoAparicion": 69,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 69,
+                  "duracion": 0
+                }
+              },
+              {
+                "id": "Cavilha (45)",
+                "ejeAproximacion": "+Y",
+                "tiempoAparicion": 68,
+                "congelado": false,
+                "destello": {
+                  "tiempoInicio": 68,
+                  "duracion": 0
+                }
               }
             ],
             "congelados": [],
@@ -1041,7 +1360,7 @@
               "apoyoEnPiso": true
             },
             "colapsada": false,
-            "promptCinematico": "Pre-ensamble de banco de trabajo: Descenso vertical de las 3 correderas fijas de la Peça 7 (lateral izquierdo) en cascada de fondo a frente desde 60 cm de altura. Duración: 8 segundos.",
+            "promptCinematico": "",
             "promptMinimizado": false
           }
         ],
@@ -1065,9 +1384,9 @@
       "vozEs": "es-MX-DaliaNeural",
       "vozPt": "pt-BR-FranciscaNeural",
       "vozEn": "en-US-JennyNeural",
-      "duracionAudioSegundos": 16.0,
+      "duracionAudioSegundos": 10,
       "camaraCinematicaActiva": false,
-      "versionAnimacionManual": 4
+      "versionAnimacionManual": 8
     }
   ]
 }

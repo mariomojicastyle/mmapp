@@ -175,85 +175,113 @@ export function GammaLiveIndicator() {
               }
             }
 
-            // 🛡️ Asignación Determinística Garantizada (Cascada a 30cm, 16s)
+            // 🛡️ Asignación Determinística Garantizada (Matriz Completa 12 Correderas + 24 Tornillos en 58s)
             const tiemposGrupos = [
-              { tSlide: 0.5, tScrews: 2.0 },   // Grupo 1: Frente (Corrediça 1 se apoya a 1.5s ➔ Tornillos 38 y 69 bajan a 2.0s)
-              { tSlide: 5.0, tScrews: 6.5 },   // Grupo 2: Centro (Corrediça 5 se apoya a 6.0s ➔ Tornillos 31 y 65 bajan a 6.5s)
-              { tSlide: 9.5, tScrews: 11.0 },  // Grupo 3: Fondo  (Corrediça 9 se apoya a 10.5s ➔ Tornillos 61 y 25 bajan a 11.0s)
+              // 1. Peça 7 (Lateral Izquierdo)
+              { tSlide: 0.5,  tScrews: 2.0 },   // Fixa 1  + Tornillos 61, 25
+              { tSlide: 5.0,  tScrews: 6.5 },   // Fixa 5  + Tornillos 31, 65
+              { tSlide: 9.5,  tScrews: 11.0 },  // Fixa 9  + Tornillos 38, 69
+
+              // 2. Peça 6 Cara A (Divisor Central, Cara Frontal/Superior)
+              { tSlide: 13.5, tScrews: 15.0 },  // Fixa 3  + Tornillos 63, 41
+              { tSlide: 17.5, tScrews: 19.0 },  // Fixa 7  + Tornillos 67, 42
+              { tSlide: 21.5, tScrews: 23.0 },  // Fixa 11 + Tornillos 71, 45
+
+              // 3. Peça 10 (Lateral Derecho)
+              { tSlide: 25.5, tScrews: 27.0 },  // Fixa 4  + Tornillos 34, 64
+              { tSlide: 29.5, tScrews: 31.0 },  // Fixa 8  + Tornillos 43, 68
+              { tSlide: 33.5, tScrews: 35.0 },  // Fixa 12 + Tornillos 48, 72
+
+              // 4. Peça 6 Cara B (Divisor Central tras volteo de 180° a los 38.5s)
+              { tSlide: 43.5, tScrews: 45.0 },  // Fixa 2  + Tornillos 62, 28
+              { tSlide: 47.5, tScrews: 49.0 },  // Fixa 6  + Tornillos 66, 35
+              { tSlide: 51.5, tScrews: 53.0 },  // Fixa 10 + Tornillos 44, 70
             ];
 
-            // Si los tornillos no fueron detectados por Three.js, inyectar el par físico verificado
-            for (const grupo of gruposEnsamble) {
-              if (!grupo.screwIds || grupo.screwIds.length === 0) {
-                if (grupo.slideId.includes("1")) grupo.screwIds = ["Parafuso E (38)", "Parafuso E (69)"];
-                else if (grupo.slideId.includes("5")) grupo.screwIds = ["Parafuso E (31)", "Parafuso E (65)"];
-                else if (grupo.slideId.includes("9")) grupo.screwIds = ["Parafuso E (61)", "Parafuso E (25)"];
-              }
-            }
-
-            const gruposFinales = (gruposEnsamble.length >= 3 && gruposEnsamble.every((g) => g.screwIds.length >= 2))
-              ? gruposEnsamble
-              : [
-                  { slideId: "Corrediça - Fixa (1)", screwIds: ["Parafuso E (38)", "Parafuso E (69)"] },
-                  { slideId: "Corrediça - Fixa (5)", screwIds: ["Parafuso E (31)", "Parafuso E (65)"] },
-                  { slideId: "Corrediça - Fixa (9)", screwIds: ["Parafuso E (61)", "Parafuso E (25)"] },
-                ];
+            const gruposFinales = [
+              // Peça 7
+              { slideId: "Corrediça - Fixa (1)",  screwIds: ["Parafuso E (61)", "Parafuso E (25)"] },
+              { slideId: "Corrediça - Fixa (5)",  screwIds: ["Parafuso E (31)", "Parafuso E (65)"] },
+              { slideId: "Corrediça - Fixa (9)",  screwIds: ["Parafuso E (38)", "Parafuso E (69)"] },
+              // Peça 6 Cara A
+              { slideId: "Corrediça - Fixa (3)",  screwIds: ["Parafuso E (63)", "Parafuso E (41)"] },
+              { slideId: "Corrediça - Fixa (7)",  screwIds: ["Parafuso E (67)", "Parafuso E (42)"] },
+              { slideId: "Corrediça - Fixa (11)", screwIds: ["Parafuso E (71)", "Parafuso E (45)"] },
+              // Peça 10
+              { slideId: "Corrediça - Fixa (4)",  screwIds: ["Parafuso E (34)", "Parafuso E (64)"] },
+              { slideId: "Corrediça - Fixa (8)",  screwIds: ["Parafuso E (43)", "Parafuso E (68)"] },
+              { slideId: "Corrediça - Fixa (12)", screwIds: ["Parafuso E (48)", "Parafuso E (72)"] },
+              // Peça 6 Cara B
+              { slideId: "Corrediça - Fixa (2)",  screwIds: ["Parafuso E (62)", "Parafuso E (28)"] },
+              { slideId: "Corrediça - Fixa (6)",  screwIds: ["Parafuso E (66)", "Parafuso E (35)"] },
+              { slideId: "Corrediça - Fixa (10)", screwIds: ["Parafuso E (44)", "Parafuso E (70)"] },
+            ];
 
             const distCm = (typeof data.payload?.capaActualizada?.desplazamientoCm === "number" && data.payload.capaActualizada.desplazamientoCm > 0)
               ? data.payload.capaActualizada.desplazamientoCm
               : 30; // 🎯 30 cm exactos
 
             const capaActual = paso?.multiplePlus?.capas?.find((c: any) => c.id === capaId) || paso?.multiplePlus?.capas?.[0];
-            const listaHerrajesATrabajar = (capaActual?.herrajes && capaActual.herrajes.length > 0)
-              ? capaActual.herrajes.map((h: any) => ({ ...h }))
-              : (data.payload?.capaActualizada?.herrajes || []).map((h: any) => ({ ...h }));
+            const herrajesPayload = data.payload?.capaActualizada?.herrajes;
+            const tieneTiemposCompletos = Array.isArray(herrajesPayload) && herrajesPayload.some((h: any) => h.tiempoAparicion > 12 && h.tiempoAparicion < 900);
 
-            listaHerrajesATrabajar.forEach((h: any) => {
-              let asignado = false;
-              for (let g = 0; g < gruposFinales.length; g++) {
-                const grupo = gruposFinales[g];
-                const timing = tiemposGrupos[g] || { tSlide: 0.5, tScrews: 2.0 };
+            let listaHerrajesATrabajar: any[] = [];
 
-                if (coincidenMismoHerraje(grupo.slideId, h.id)) {
-                  h.tiempoAparicion = timing.tSlide;
-                  h.ejeAproximacion = "+Y";
-                  h.desplazamientoCm = distCm;
-                  h.escalaInicial = 1.0;
-                  h.duracionEscalaSegundos = undefined;
-                  asignado = true;
-                  break;
+            if (tieneTiemposCompletos) {
+              // 🚀 Usar directamente la lista enriquecida enviada por Gamma
+              listaHerrajesATrabajar = herrajesPayload.map((h: any) => ({ ...h }));
+            } else {
+              listaHerrajesATrabajar = (capaActual?.herrajes && capaActual.herrajes.length > 0)
+                ? capaActual.herrajes.map((h: any) => ({ ...h }))
+                : (data.payload?.capaActualizada?.herrajes || []).map((h: any) => ({ ...h }));
+
+              listaHerrajesATrabajar.forEach((h: any) => {
+                let asignado = false;
+                for (let g = 0; g < gruposFinales.length; g++) {
+                  const grupo = gruposFinales[g];
+                  const timing = tiemposGrupos[g] || { tSlide: 0.5, tScrews: 2.0 };
+
+                  if (coincidenMismoHerraje(grupo.slideId, h.id)) {
+                    h.tiempoAparicion = timing.tSlide;
+                    h.ejeAproximacion = "+Y";
+                    h.desplazamientoCm = distCm;
+                    h.escalaInicial = 1.0;
+                    h.duracionEscalaSegundos = undefined;
+                    asignado = true;
+                    break;
+                  }
+
+                  if (grupo.screwIds.some((sId: string) => coincidenMismoHerraje(sId, h.id))) {
+                    h.tiempoAparicion = timing.tScrews;
+                    h.ejeAproximacion = "+Y";
+                    h.desplazamientoCm = distCm;
+                    h.escalaInicial = 2.0;
+                    h.duracionEscalaSegundos = 1.0;
+                    asignado = true;
+                    break;
+                  }
                 }
 
-                if (grupo.screwIds.some((sId: string) => coincidenMismoHerraje(sId, h.id))) {
-                  h.tiempoAparicion = timing.tScrews;
-                  h.ejeAproximacion = "+Y";
-                  h.desplazamientoCm = distCm;
-                  h.escalaInicial = 2.0;
-                  h.duracionEscalaSegundos = 1.0;
-                  asignado = true;
-                  break;
+                if (!asignado) {
+                  const esCavilha = h.id?.toLowerCase().includes("cavilha") || h.cleanName?.toLowerCase().includes("cavilha");
+                  if (esCavilha) {
+                    h.tiempoAparicion = 0;
+                    h.desplazamientoCm = undefined;
+                    h.congelado = true;
+                  } else {
+                    h.tiempoAparicion = 999;
+                    h.desplazamientoCm = undefined;
+                  }
                 }
-              }
-
-              if (!asignado) {
-                const esCavilha = h.id?.toLowerCase().includes("cavilha") || h.cleanName?.toLowerCase().includes("cavilha");
-                if (esCavilha) {
-                  h.tiempoAparicion = 0;
-                  h.desplazamientoCm = undefined;
-                  h.congelado = true;
-                } else {
-                  h.tiempoAparicion = 999;
-                  h.desplazamientoCm = undefined;
-                }
-              }
-            });
+              });
+            }
 
             if (!data.payload.capaActualizada) data.payload.capaActualizada = {};
             data.payload.capaActualizada.herrajes = listaHerrajesATrabajar;
-            data.payload.duracionTotal = data.payload.duracionTotal || 16.0;
-            data.payload.duracionAudioSegundos = data.payload.duracionTotal || 16.0;
+            data.payload.duracionTotal = data.payload.duracionTotal || 58.0;
+            data.payload.duracionAudioSegundos = data.payload.duracionTotal || 58.0;
 
-              if (typeof (state as any).aplicarCinematicaCopilot === "function") {
+            if (typeof (state as any).aplicarCinematicaCopilot === "function") {
                 (state as any).aplicarCinematicaCopilot(pasoId, capaId, data.payload);
               }
 

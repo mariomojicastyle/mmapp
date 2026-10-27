@@ -321,6 +321,54 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
+  // Alias retrocompatible
+  actualizarTableroCapaPlus: (
+    pasoId: string,
+    capaId: string,
+    tableroId: string,
+    partial: Partial<TableroCapaPlus>
+  ) => {
+    get().actualizarTableroPlus(pasoId, capaId, tableroId, partial);
+  },
+
+  // 6b. Fijar pose pre-ensamble en banco para todos los tableros de la capa (t = 0.0s)
+  fijarPoseBancoCapaPlus: (pasoId: string, capaId: string) => {
+    const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          capas: (p.multiplePlus.capas || []).map((c: any) => {
+            if (c.id !== capaId) return c;
+            return {
+              ...c,
+              tableros: (c.tableros || []).map((t: any) => {
+                const kfPos = (t.keyframesPos && t.keyframesPos.length > 0)
+                  ? t.keyframesPos
+                  : [{ t: 0.0, x: t.offsetXCm || 0, y: t.offsetYCm || 0, z: t.offsetZCm || 0 }];
+                const kfRot = (t.keyframesRot && t.keyframesRot.length > 0)
+                  ? t.keyframesRot
+                  : [{ t: 0.0, rx: t.rotacionGrados?.[0] || 0, ry: t.rotacionGrados?.[1] || 0, rz: t.rotacionGrados?.[2] || 0 }];
+                return {
+                  ...t,
+                  keyframesPos: kfPos,
+                  keyframesRot: kfRot,
+                };
+              }),
+            };
+          }),
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
   // 7. Agregar Herraje a la capa
   // Por defecto: ejeAproximacion = "-X", tiempoAparicion = 0
   agregarHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => {
@@ -439,6 +487,51 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
               congelados: (c.congelados || []).map((h: any) =>
                 h.id === herrajeId ? { ...h, ...partial } : h
               ),
+            };
+          }),
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
+
+    if (typeof window !== "undefined" && (window as any).__3bfDespertarAnimacion) {
+      (window as any).__3bfDespertarAnimacion();
+    }
+  },
+
+    // 9.b Actualizar Cinemática Global de Familia de Herraje
+  actualizarCinematicaFamiliaPlus: (
+    pasoId: string,
+    capaId: string,
+    familia: string,
+    partial: any
+  ) => {
+    const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          capas: (p.multiplePlus.capas || []).map((c: any) => {
+            if (c.id !== capaId) return c;
+            const dict = { ...(c.cinematicasHerrajes || {}) };
+            const actual = dict[familia] || {
+              familia,
+              estilo: "pop",
+              escalaInicialPct: 180,
+              distanciaGiroMm: 35,
+              gradosGiroTotal: 820,
+            };
+            dict[familia] = { ...actual, ...partial };
+            return {
+              ...c,
+              cinematicasHerrajes: dict,
             };
           }),
         },

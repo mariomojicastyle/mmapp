@@ -74,6 +74,29 @@ export default function TimelineScrubber() {
     duracionTotal % 1 === 0 ? duracionTotal.toString() : duracionTotal.toFixed(1)
   );
 
+  // ⏱️ Estado para edición directa del segundo actual al que se quiere saltar
+  const [editandoTiempoActual, setEditandoTiempoActual] = useState(false);
+  const [inputTiempoActualTexto, setInputTiempoActualTexto] = useState<string>("");
+
+  useEffect(() => {
+    if (!editandoTiempoActual) {
+      const s = Math.round(timelineCurrentTime);
+      setInputTiempoActualTexto(String(s));
+    }
+  }, [timelineCurrentTime, editandoTiempoActual]);
+
+  const guardarSaltoTiempo = () => {
+    setEditandoTiempoActual(false);
+    const parsed = parseFloat(inputTiempoActualTexto);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(0, Math.min(duracionTotal, Math.round(parsed * 10) / 10));
+      setTimelineCurrentTime(clamped);
+      if (audioRef.current) {
+        audioRef.current.currentTime = clamped;
+      }
+    }
+  };
+
   useEffect(() => {
     const formatted = duracionTotal % 1 === 0 ? duracionTotal.toString() : duracionTotal.toFixed(1);
     setInputDuracionTexto(formatted);
@@ -524,16 +547,6 @@ export default function TimelineScrubber() {
           </span>
         </div>
 
-        {/* Botón Paso Anterior */}
-        <button
-          type="button"
-          onClick={irPasoAnterior}
-          title="Paso Anterior"
-          className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-300 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 transition"
-        >
-          <SkipBack className="w-3.5 h-3.5" />
-        </button>
-
         {/* Botón Play / Pause en Cápsula Circular */}
         <button
           type="button"
@@ -545,41 +558,44 @@ export default function TimelineScrubber() {
           {isTimelinePlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
         </button>
 
-        {/* Botón Reiniciar (Rewind) */}
+        {/* Botón Reiniciar (Rewind a 0.0s) */}
         <button
           type="button"
           onClick={handleReset}
           title="Reiniciar a 0.0s"
-          className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-300 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 transition"
+          className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-300 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
         >
           <RotateCcw className="w-3 h-3" />
         </button>
 
-        {/* Botón Paso Siguiente */}
-        <button
-          type="button"
-          onClick={irPasoSiguiente}
-          title="Paso Siguiente"
-          className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-300 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 transition"
-        >
-          <SkipForward className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Botón Despertar / Recalcular Animación 3D */}
-        <button
-          type="button"
-          onClick={despertarAnimacion}
-          title="Despertar y recalcular animación 3D (resetea mixer y reactiva cinemática)"
-          className="w-7 h-7 rounded-full flex items-center justify-center border border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition active:scale-95"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isWaking ? "animate-spin" : ""}`} />
-        </button>
-
-        {/* Indicador de Tiempo Actual / Campo Editable de Duración Total */}
+        {/* Indicador de Tiempo Actual (Editable con 1 Clic / Enter) / Campo Editable de Duración Total */}
         <div className="flex items-center gap-1.5 font-mono text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/70 shrink-0">
-          <span style={{ color: botonActivoColor }} className="min-w-[42px] text-right font-bold">
-            {formatoTiempo(timelineCurrentTime)}
-          </span>
+          <div className="relative inline-flex items-center gap-1" title="Segundo actual de la animación. Haz clic para escribir el segundo exacto y presiona Enter">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={inputTiempoActualTexto}
+              onFocus={(e) => {
+                setEditandoTiempoActual(true);
+                e.currentTarget.select();
+              }}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              onChange={(e) => setInputTiempoActualTexto(e.target.value)}
+              onBlur={guardarSaltoTiempo}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  guardarSaltoTiempo();
+                  (e.target as HTMLInputElement).blur();
+                } else if (e.key === "Escape") {
+                  setEditandoTiempoActual(false);
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
+              style={{ color: botonActivoColor }}
+              className="w-14 text-center font-mono text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-full px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-inner cursor-text"
+            />
+            <span style={{ color: botonActivoColor }} className="text-[11px] font-bold select-none">s</span>
+          </div>
           <span className="opacity-30 select-none">/</span>
           <div className="relative inline-flex items-center gap-1" title="Duración total del paso en segundos (Escribe el tiempo exacto que desees)">
             <input

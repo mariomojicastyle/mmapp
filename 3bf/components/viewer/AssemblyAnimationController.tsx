@@ -137,7 +137,11 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
 
           .map((c: any) => {
 
-            const tabs = (c.tableros || []).map((t: any) => `${t.id}:${t.offsetXCm || 0}:${t.offsetYCm || 0}:${t.offsetZCm || 0}:${t.elevacionZCm || 0}:${(t.rotacionGrados || [0, 0, 0]).join(",")}:${t.tiempoAparicion || 0}:${t.tiempoInicioMovimiento || 0}:${t.destinoId || ""}`).join(",");
+            const tabs = (c.tableros || []).map((t: any) => {
+              const kfP = (t.keyframesPos || []).map((k: any) => `${k.t}:${k.x}:${k.y}:${k.z}`).join(";");
+              const kfR = (t.keyframesRot || []).map((k: any) => `${k.t}:${k.rx}:${k.ry}:${k.rz}`).join(";");
+              return `${t.id}:${t.offsetXCm || 0}:${t.offsetYCm || 0}:${t.offsetZCm || 0}:${t.elevacionZCm || 0}:${(t.rotacionGrados || [0, 0, 0]).join(",")}:${t.tiempoAparicion || 0}:${t.tiempoInicioMovimiento || 0}:${t.destinoId || ""}:${kfP}:${kfR}`;
+            }).join(",");
 
             const hws = (c.herrajes || []).map((h: any) => `${h.id}:${h.ejeAproximacion || ""}:${h.tiempoAparicion || 0}:${h.congelado}`).join(",");
 
